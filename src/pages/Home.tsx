@@ -19,18 +19,18 @@ import {
   IonModal,
   IonFab,
   IonFabButton,
-  IonIcon
-} from '@ionic/react';
-import { add } from 'ionicons/icons';
-import { useEffect, useRef, useState } from 'react';
-import { useHistory } from 'react-router-dom';
-import './Home.css';
-import { Quiz } from '../models/quiz';
-import { quizService } from '../services/QuizService';
-import { OverlayEventDetail } from '@ionic/react/dist/types/components/react-component-lib/interfaces';
-import AddQuizForm from '../components/AddQuizForm';
+  IonIcon,
+} from "@ionic/react";
+import { add } from "ionicons/icons";
+import { useEffect, useRef, useState } from "react";
+import { useHistory } from "react-router-dom";
+import "./Home.css";
+import { Quiz } from "../models/quiz";
+import { quizService } from "../services/QuizService";
+import { OverlayEventDetail } from "@ionic/react/dist/types/components/react-component-lib/interfaces";
+import AddQuizForm from "../components/AddQuizForm";
 
-import { useToast } from '../hooks/useToast';
+import { useToast } from "../hooks/useToast";
 
 const Home: React.FC = () => {
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
@@ -43,7 +43,7 @@ const Home: React.FC = () => {
       setQuizzes(data);
     };
     fetchQuizzes();
-  }, []);
+  }, [quizzes]);
 
   const modal = useRef<HTMLIonModalElement>(null);
   const input = useRef<HTMLIonInputElement>(null);
@@ -51,11 +51,11 @@ const Home: React.FC = () => {
   const [newQuizData, setNewQuizData] = useState<Partial<Quiz>>({});
 
   function confirm() {
-    modal.current?.dismiss(newQuizData, 'confirm');
+    modal.current?.dismiss(newQuizData, "confirm");
   }
 
   async function onWillDismiss(event: CustomEvent<OverlayEventDetail>) {
-    if (event.detail.role === 'confirm') {
+    if (event.detail.role === "confirm") {
       const quizData = event.detail.data as Partial<Quiz>;
       if (quizData.title && quizData.description) {
         // Create a proper Quiz object
@@ -63,7 +63,7 @@ const Home: React.FC = () => {
           id: Date.now().toString(), // Or let Firebase generate ID if using add()
           title: quizData.title,
           description: quizData.description,
-          questions: quizData.questions || []
+          questions: quizData.questions || [],
         };
 
         // Add to service
@@ -73,8 +73,8 @@ const Home: React.FC = () => {
           setQuizzes([...quizzes, newQuiz]);
           toast.showSuccess(`Quiz "${newQuiz.title}" created successfully!`);
         } catch (error) {
-          console.error('Error adding quiz:', error);
-          toast.showError('Failed to create quiz. Please try again.');
+          console.error("Error adding quiz:", error);
+          toast.showError("Failed to create quiz. Please try again.");
         }
       }
     }
@@ -105,11 +105,11 @@ const Home: React.FC = () => {
                 >
                   <IonCardHeader>
                     <IonCardTitle>{quiz.title}</IonCardTitle>
-                    <IonCardSubtitle>{quiz.questions.length} questions</IonCardSubtitle>
+                    <IonCardSubtitle>
+                      {quiz.questions.length} questions
+                    </IonCardSubtitle>
                   </IonCardHeader>
-                  <IonCardContent>
-                    {quiz.description}
-                  </IonCardContent>
+                  <IonCardContent>{quiz.description}</IonCardContent>
                 </IonCard>
               </IonCol>
             ))}
@@ -121,11 +121,17 @@ const Home: React.FC = () => {
           <IonIcon icon={add}></IonIcon>
         </IonFabButton>
       </IonFab>
-      <IonModal ref={modal} trigger="open-modal" onWillDismiss={(event) => onWillDismiss(event)}>
+      <IonModal
+        ref={modal}
+        trigger="open-modal"
+        onWillDismiss={(event) => onWillDismiss(event)}
+      >
         <IonHeader>
           <IonToolbar>
             <IonButtons slot="start">
-              <IonButton onClick={() => modal.current?.dismiss()}>Cancel</IonButton>
+              <IonButton onClick={() => modal.current?.dismiss()}>
+                Cancel
+              </IonButton>
             </IonButtons>
             <IonTitle>Add New Quiz</IonTitle>
             <IonButtons slot="end">
@@ -137,7 +143,6 @@ const Home: React.FC = () => {
         </IonHeader>
         <AddQuizForm onQuizChange={(data) => setNewQuizData(data)} />
       </IonModal>
-
     </IonPage>
   );
 };

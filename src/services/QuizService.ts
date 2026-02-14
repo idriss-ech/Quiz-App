@@ -1,97 +1,181 @@
-import { Quiz } from '../models/quiz';
-import { db } from '../config/firebase';
-import { collection, getDocs, doc, getDoc, writeBatch } from 'firebase/firestore';
+import { Quiz } from "../models/quiz";
+import { db } from "../config/firebase";
+import {
+  collection,
+  getDocs,
+  doc,
+  getDoc,
+  writeBatch,
+} from "firebase/firestore";
+import { Question } from "../models/question";
+
 class QuizService {
+  private collectionName = "Quiz";
 
-    private collectionName = 'Quiz';
+  // ==============================
+  // GET ALL (NO QUESTIONS)
+  // ==============================
+  async getAll(): Promise<Quiz[]> {
+    const querySnapshot = await getDocs(collection(db, this.collectionName));
 
-    async getAll(): Promise<Quiz[]> {
-        const querySnapshot = await getDocs(collection(db, this.collectionName));
-        return querySnapshot.docs.map(doc => {
-            const data = doc.data();
-            return {
-                id: doc.id,
-                title: data['title'],
-                description: data['description'],
-                questions: data['questions'] || []
-            } as Quiz;
+    return querySnapshot.docs.map((d) => {
+      const data = d.data();
+      return {
+        id: d.id,
+        title: data["title"],
+        description: data["description"],
+        questions: [],
+      } as Quiz;
+    });
+  }
+
+  // ==============================
+  // GET ONE (WITH QUESTIONS)
+  // ==============================
+  async get(id: string): Promise<Quiz | undefined> {
+    const docRef = doc(db, this.collectionName, id);
+    const docSnap = await getDoc(docRef);
+
+    if (!docSnap.exists()) return undefined;
+
+    const data = docSnap.data();
+
+    const questionsRef = collection(db, this.collectionName, id, "Question");
+
+    const questionsSnap = await getDocs(questionsRef);
+
+    const questions: Question[] = questionsSnap.docs.map(
+      (qDoc) =>
+        ({
+          id: qDoc.id,
+          ...qDoc.data(),
+        }) as Question,
+    );
+
+    return {
+      id: docSnap.id,
+      title: data["title"],
+      description: data["description"],
+      questions,
+    };
+  }
+
+  // ==============================
+  // ADD QUIZ + QUESTIONS
+  // ==============================
+  async add(quiz: Quiz): Promise<void> {
+    const batch = writeBatch(db);
+
+    const newQuizRef = doc(collection(db, this.collectionName));
+    const quizId = newQuizRef.id;
+
+    batch.set(newQuizRef, {
+      title: quiz.title,
+      description: quiz.description,
+      questionCount: quiz.questions?.length ?? 0,
+    });
+
+    if (quiz.questions?.length) {
+      quiz.questions.forEach((question) => {
+        const questionRef = doc(
+          db,
+          this.collectionName,
+          quizId,
+          "Question",
+          question.id,
+        );
+
+        batch.set(questionRef, {
+          text: question.text,
+          choices: question.choices,
+          correctChoiceId: question.correctChoiceId,
         });
+      });
     }
 
-    async get(id: string): Promise<Quiz | undefined> {
-        const docRef = doc(db, this.collectionName, id);
-        const docSnap = await getDoc(docRef);
+    await batch.commit();
+  }
 
-        if (docSnap.exists()) {
-            const data = docSnap.data();
+  // ==============================
+  // UPDATE QUIZ + QUESTIONS
+  // ==============================
+  async update(updatedQuiz: Quiz): Promise<void> {
+    const batch = writeBatch(db);
 
-            // Fetch questions from subcollection
-            const questions: any[] = [];
-            try {
-                const questionsRef = collection(db, this.collectionName, id, 'Question');
-                const questionsSnap = await getDocs(questionsRef);
-                questionsSnap.forEach(qDoc => {
-                    questions.push({
-                        id: qDoc.id,
-                        ...qDoc.data()
-                    });
-                });
-            } catch (error) {
-                console.error("Error fetching questions subcollection:", error);
-            }
+    const quizRef = doc(db, this.collectionName, updatedQuiz.id);
 
-            return {
-                id: docSnap.id,
-                title: data['title'],
-                description: data['description'],
-                questions: questions
-            } as Quiz;
-        } else {
-            return undefined;
-        }
-    }
+    batch.update(quizRef, {
+      title: updatedQuiz.title,
+      description: updatedQuiz.description,
+      questionCount: updatedQuiz.questions.length,
+    });
 
-    async add(quiz: Quiz): Promise<void> {
-        const batch = writeBatch(db);
+    const questionsRef = collection(
+      db,
+      this.collectionName,
+      updatedQuiz.id,
+      "Question",
+    );
 
-        // 1. Create reference for the new Quiz
-        const newQuizRef = doc(collection(db, this.collectionName));
-        const quizId = newQuizRef.id;
+    const existingQuestionsSnap = await getDocs(questionsRef);
+    const existingIds = existingQuestionsSnap.docs.map((d) => d.id);
 
-        // 2. Prepare Quiz data (excluding questions if we store them in subcollection, 
-        //    but let's keep basic info)
-        batch.set(newQuizRef, {
-            title: quiz.title,
-            description: quiz.description,
-            // We can store question count or empty array if we mirror data
-            questions: []
-        });
+    const updatedIds = updatedQuiz.questions.map((q) => q.id);
 
-        // 3. Add Questions as a subcollection 'Question' (SINGULAR based on user hint)
-        // Note: The user mentioned "Choice Question Quiz", so likely hierarchy is:
-        // Quiz (doc) -> Question (subcollection)
-        if (quiz.questions && quiz.questions.length > 0) {
-            quiz.questions.forEach(question => {
-                const newQuestionRef = doc(collection(db, this.collectionName, quizId, 'Question'));
-                batch.set(newQuestionRef, {
-                    text: question.text,
-                    choices: question.choices, // Storing choices directly in Question doc
-                    correctChoiceId: question.correctChoiceId
-                });
-            });
-        }
+    // DELETE removed questions
+    existingIds
+      .filter((id) => !updatedIds.includes(id))
+      .forEach((id) => {
+        const qRef = doc(
+          db,
+          this.collectionName,
+          updatedQuiz.id,
+          "Question",
+          id,
+        );
+        batch.delete(qRef);
+      });
 
-        // 4. Commit the batch
-        await batch.commit();
-    }
+    // ADD or UPDATE questions
+    updatedQuiz.questions.forEach((q) => {
+      const qRef = doc(
+        db,
+        this.collectionName,
+        updatedQuiz.id,
+        "Question",
+        q.id,
+      );
 
-    async delete(id: string): Promise<void> {
-        // TODO: Implémenter delete avec Firestore
-    }
+      batch.set(qRef, {
+        text: q.text,
+        choices: q.choices,
+        correctChoiceId: q.correctChoiceId,
+      });
+    });
 
-    async update(updatedQuiz: Quiz): Promise<void> {
-        // TODO: Implémenter update avec Firestore
-    }
+    await batch.commit();
+  }
+
+  // ==============================
+  // DELETE QUIZ + QUESTIONS
+  // ==============================
+  async delete(id: string): Promise<void> {
+    const batch = writeBatch(db);
+
+    const quizRef = doc(db, this.collectionName, id);
+
+    const questionsRef = collection(db, this.collectionName, id, "Question");
+
+    const questionsSnap = await getDocs(questionsRef);
+
+    questionsSnap.forEach((qDoc) => {
+      batch.delete(qDoc.ref);
+    });
+
+    batch.delete(quizRef);
+
+    await batch.commit();
+  }
 }
 
 export const quizService = new QuizService();
