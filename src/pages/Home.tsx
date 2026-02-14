@@ -14,8 +14,6 @@ import {
   IonCardSubtitle,
   IonButton,
   IonButtons,
-  IonInput,
-  IonItem,
   IonModal,
   IonFab,
   IonFabButton,
@@ -46,7 +44,6 @@ const Home: React.FC = () => {
   }, [quizzes]);
 
   const modal = useRef<HTMLIonModalElement>(null);
-  const input = useRef<HTMLIonInputElement>(null);
 
   const [newQuizData, setNewQuizData] = useState<Partial<Quiz>>({});
 
