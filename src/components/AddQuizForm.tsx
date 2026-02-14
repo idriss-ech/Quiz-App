@@ -20,12 +20,24 @@ import { Quiz } from '../models/quiz';
 
 interface AddQuizFormProps {
     onQuizChange: (quizData: Partial<Quiz>) => void;
+    initialData?: Partial<Quiz>;
 }
 
-const AddQuizForm: React.FC<AddQuizFormProps> = ({ onQuizChange }) => {
-    const [title, setTitle] = useState('');
-    const [description, setDescription] = useState('');
-    const [questions, setQuestions] = useState<Question[]>([]);
+const AddQuizForm: React.FC<AddQuizFormProps> = ({ onQuizChange, initialData }) => {
+    const [title, setTitle] = useState(initialData?.title || '');
+    const [description, setDescription] = useState(initialData?.description || '');
+    const [questions, setQuestions] = useState<Question[]>(initialData?.questions || []);
+
+    // Effect to update state if initialData changes (e.g. re-opening modal with different data)
+    // However, AddQuizForm is typically mounted fresh or we want to persist edits.
+    // If the modal unmounts it resets. If it stays mounted, we might need this.
+    useEffect(() => {
+        if (initialData) {
+            setTitle(initialData.title || '');
+            setDescription(initialData.description || '');
+            setQuestions(initialData.questions || []);
+        }
+    }, [initialData]);
 
     // Helper to bubble up changes
     const notifyParent = (t: string, d: string, q: Question[]) => {
