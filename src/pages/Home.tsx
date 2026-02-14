@@ -23,6 +23,7 @@ import {
 } from '@ionic/react';
 import { add } from 'ionicons/icons';
 import { useEffect, useRef, useState } from 'react';
+import { useHistory } from 'react-router-dom';
 import './Home.css';
 import { Quiz } from '../models/quiz';
 import { quizService } from '../services/QuizService';
@@ -34,6 +35,7 @@ import { useToast } from '../hooks/useToast';
 const Home: React.FC = () => {
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const toast = useToast();
+  const history = useHistory();
 
   useEffect(() => {
     const fetchQuizzes = async () => {
@@ -90,7 +92,17 @@ const Home: React.FC = () => {
           <IonRow>
             {quizzes.map((quiz) => (
               <IonCol size="12" key={quiz.id}>
-                <IonCard color="primary" routerLink={`/quiz/${quiz.id}`} button={true}>
+                <IonCard
+                  color="primary"
+                  button={true}
+                  onClick={() => {
+                    // Fix for "Blocked aria-hidden" warning by removing focus before navigation
+                    if (document.activeElement instanceof HTMLElement) {
+                      document.activeElement.blur();
+                    }
+                    history.push(`/quiz/${quiz.id}`);
+                  }}
+                >
                   <IonCardHeader>
                     <IonCardTitle>{quiz.title}</IonCardTitle>
                     <IonCardSubtitle>{quiz.questions.length} questions</IonCardSubtitle>

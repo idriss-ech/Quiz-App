@@ -24,11 +24,27 @@ class QuizService {
 
         if (docSnap.exists()) {
             const data = docSnap.data();
+
+            // Fetch questions from subcollection
+            const questions: any[] = [];
+            try {
+                const questionsRef = collection(db, this.collectionName, id, 'Question');
+                const questionsSnap = await getDocs(questionsRef);
+                questionsSnap.forEach(qDoc => {
+                    questions.push({
+                        id: qDoc.id,
+                        ...qDoc.data()
+                    });
+                });
+            } catch (error) {
+                console.error("Error fetching questions subcollection:", error);
+            }
+
             return {
                 id: docSnap.id,
                 title: data['title'],
                 description: data['description'],
-                questions: data['questions'] || []
+                questions: questions
             } as Quiz;
         } else {
             return undefined;
