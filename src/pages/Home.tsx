@@ -4,9 +4,6 @@ import {
   IonPage,
   IonTitle,
   IonToolbar,
-  IonGrid,
-  IonRow,
-  IonCol,
   IonCard,
   IonCardHeader,
   IonCardTitle,
@@ -18,64 +15,115 @@ import {
   IonFab,
   IonFabButton,
   IonIcon,
+  IonGrid,
+  IonRow,
+  IonCol,
+  useIonViewWillEnter
 } from "@ionic/react";
-import { add } from "ionicons/icons";
-import { useEffect, useRef, useState } from "react";
+import { add, create, trash } from "ionicons/icons";
+import { useRef, useState } from "react";
 import { useHistory } from "react-router-dom";
 import "./Home.css";
 import { Quiz } from "../models/quiz";
 import { quizService } from "../services/QuizService";
 import { OverlayEventDetail } from "@ionic/react/dist/types/components/react-component-lib/interfaces";
 import AddQuizForm from "../components/AddQuizForm";
-
 import { useToast } from "../hooks/useToast";
 
 const Home: React.FC = () => {
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
-  const toast = useToast();
-  const history = useHistory();
-
-  useEffect(() => {
-    const fetchQuizzes = async () => {
-      const data = await quizService.getAll();
-      setQuizzes(data);
-    };
-    fetchQuizzes();
-  }, [quizzes]);
-
-  const modal = useRef<HTMLIonModalElement>(null);
-
+  const [showModal, setShowModal] = useState(false);
+  const [editingQuizId, setEditingQuizId] = useState<string | null>(null);
   const [newQuizData, setNewQuizData] = useState<Partial<Quiz>>({});
 
-  function confirm() {
-    modal.current?.dismiss(newQuizData, "confirm");
-  }
+  const history = useHistory();
+  const toast = useToast();
+  const modal = useRef<HTMLIonModalElement>(null);
 
-  async function onWillDismiss(event: CustomEvent<OverlayEventDetail>) {
+  const fetchQuizzes = async () => {
+    const data = await quizService.getAll();
+    setQuizzes(data);
+  };
+
+  useIonViewWillEnter(() => {
+    fetchQuizzes();
+  });
+
+  const handleOpenAddModal = () => {
+    setEditingQuizId(null);
+    setNewQuizData({});
+    setShowModal(true);
+  };
+
+  const handleOpenEditModal = async (e: React.MouseEvent, quizId: string) => {
+    e.stopPropagation();
+    try {
+      const fullQuiz = await quizService.get(quizId);
+      if (fullQuiz) {
+        setEditingQuizId(quizId);
+        setNewQuizData(fullQuiz);
+        setShowModal(true);
+      } else {
+        toast.showError("Quiz not found");
+      }
+    } catch (error) {
+      console.error("Error fetching quiz details:", error);
+      toast.showError("Failed to load quiz details");
+    }
+  };
+
+  const handleDeleteQuiz = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    try {
+      await quizService.delete(id);
+      setQuizzes(quizzes.filter(q => q.id !== id));
+      toast.showSuccess("Quiz deleted successfully");
+    } catch (error) {
+      console.error("Error deleting quiz:", error);
+      toast.showError("Failed to delete quiz");
+    }
+  };
+
+  const onWillDismiss = async (event: CustomEvent<OverlayEventDetail>) => {
+    setShowModal(false);
     if (event.detail.role === "confirm") {
-      const quizData = event.detail.data as Partial<Quiz>;
-      if (quizData.title && quizData.description) {
-        // Create a proper Quiz object
-        const newQuiz: Quiz = {
-          id: Date.now().toString(), // Or let Firebase generate ID if using add()
-          title: quizData.title,
-          description: quizData.description,
-          questions: quizData.questions || [],
-        };
+      const quizData = newQuizData; // Use state directly as it's updated by form
 
-        // Add to service
-        try {
+      if (!quizData.title || !quizData.description) {
+        toast.showError("Title and description are required");
+        return;
+      }
+
+      try {
+        if (editingQuizId) {
+          // Update existing
+          const updatedQuiz: Quiz = {
+            ...quizData as Quiz,
+            id: editingQuizId
+          };
+          await quizService.update(updatedQuiz);
+          setQuizzes(quizzes.map(q => q.id === editingQuizId ? updatedQuiz : q));
+          toast.showSuccess("Quiz updated successfully");
+        } else {
+          // Create new
+          const newQuiz: Quiz = {
+            id: Date.now().toString(),
+            title: quizData.title,
+            description: quizData.description,
+            questions: quizData.questions || [],
+          };
           await quizService.add(newQuiz);
-          // Update local state (optional, or re-fetch)
           setQuizzes([...quizzes, newQuiz]);
-          toast.showSuccess(`Quiz "${newQuiz.title}" created successfully!`);
-        } catch (error) {
-          console.error("Error adding quiz:", error);
-          toast.showError("Failed to create quiz. Please try again.");
+          toast.showSuccess("Quiz created successfully");
         }
+      } catch (error) {
+        console.error("Error saving quiz:", error);
+        toast.showError("Failed to save quiz");
       }
     }
-  }
+    setEditingQuizId(null);
+    setNewQuizData({});
+  };
 
   return (
     <IonPage>
@@ -84,11 +132,11 @@ const Home: React.FC = () => {
           <IonTitle>Quiz App</IonTitle>
         </IonToolbar>
       </IonHeader>
-      <IonContent>
+      <IonContent fullscreen>
         <IonGrid>
           <IonRow>
             {quizzes.map((quiz) => (
-              <IonCol size="12" key={quiz.id}>
+              <IonCol size="12" sizeMd="6" key={quiz.id}>
                 <IonCard
                   color="primary"
                   button={true}
@@ -107,38 +155,62 @@ const Home: React.FC = () => {
                     </IonCardSubtitle>
                   </IonCardHeader>
                   <IonCardContent>{quiz.description}</IonCardContent>
+
+                  <div className="ion-text-right ion-padding-end ion-padding-bottom">
+                    <IonButton
+                      fill="clear"
+                      color="light"
+                      onClick={(e) => handleOpenEditModal(e, quiz.id)}
+                    >
+                      <IonIcon slot="icon-only" icon={create} />
+                    </IonButton>
+                    <IonButton
+                      fill="clear"
+                      color="danger"
+                      onClick={(e) => handleDeleteQuiz(e, quiz.id)}
+                    >
+                      <IonIcon slot="icon-only" icon={trash} />
+                    </IonButton>
+                  </div>
                 </IonCard>
               </IonCol>
             ))}
           </IonRow>
         </IonGrid>
       </IonContent>
-      <IonFab slot="fixed" vertical="bottom" horizontal="center">
-        <IonFabButton id="open-modal">
+
+      <IonFab vertical="bottom" horizontal="end" slot="fixed">
+        <IonFabButton onClick={handleOpenAddModal}>
           <IonIcon icon={add}></IonIcon>
         </IonFabButton>
       </IonFab>
+
       <IonModal
         ref={modal}
-        trigger="open-modal"
+        isOpen={showModal}
         onWillDismiss={(event) => onWillDismiss(event)}
       >
         <IonHeader>
           <IonToolbar>
             <IonButtons slot="start">
-              <IonButton onClick={() => modal.current?.dismiss()}>
+              <IonButton onClick={() => modal.current?.dismiss(null, 'cancel')}>
                 Cancel
               </IonButton>
             </IonButtons>
-            <IonTitle>Add New Quiz</IonTitle>
+            <IonTitle>{editingQuizId ? 'Edit Quiz' : 'Add New Quiz'}</IonTitle>
             <IonButtons slot="end">
-              <IonButton strong={true} onClick={() => confirm()}>
-                Save
+              <IonButton strong={true} onClick={() => modal.current?.dismiss(newQuizData, 'confirm')}>
+                Confirm
               </IonButton>
             </IonButtons>
           </IonToolbar>
         </IonHeader>
-        <AddQuizForm onQuizChange={(data) => setNewQuizData(data)} />
+        <IonContent>
+          <AddQuizForm
+            onQuizChange={(data) => setNewQuizData(data)}
+            initialData={editingQuizId ? newQuizData : undefined}
+          />
+        </IonContent>
       </IonModal>
     </IonPage>
   );

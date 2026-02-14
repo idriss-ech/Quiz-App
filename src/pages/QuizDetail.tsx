@@ -1,20 +1,18 @@
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButtons, IonBackButton, IonSpinner, IonText, IonCard, IonCardHeader, IonCardSubtitle, IonCardTitle, IonButton, IonModal, IonFooter, IonIcon } from '@ionic/react';
-import { arrowBack, arrowForward, checkmarkDone } from 'ionicons/icons';
+import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButtons, IonBackButton, IonSpinner, IonText, IonCard, IonCardHeader, IonCardSubtitle, IonCardTitle, IonButton, IonFooter, IonIcon, IonGrid, IonRow, IonCol } from '@ionic/react';
+import { arrowForward, checkmarkDone, home, trophy } from 'ionicons/icons';
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router';
 import { Quiz } from '../models/quiz';
 import { quizService } from '../services/QuizService';
 import QuestionCard from '../components/QuestionCard';
-import AddQuizForm from '../components/AddQuizForm';
 
 const QuizDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const [quiz, setQuiz] = useState<Quiz | undefined>(undefined);
     const [loading, setLoading] = useState<boolean>(true);
     const [answers, setAnswers] = useState<Record<string, string>>({});
-    const [pendingUpdate, setPendingUpdate] = useState<Partial<Quiz>>({});
-    const [showEditModal, setShowEditModal] = useState(false);
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+    const [score, setScore] = useState<number | null>(null);
 
     useEffect(() => {
         const fetchQuiz = async () => {
@@ -32,6 +30,17 @@ const QuizDetail: React.FC = () => {
             ...prev,
             [questionId]: choiceId
         }));
+    };
+
+    const handleFinish = () => {
+        if (!quiz) return;
+        let correctCount = 0;
+        quiz.questions.forEach(q => {
+            if (answers[q.id] === q.correctChoiceId) {
+                correctCount++;
+            }
+        });
+        setScore(correctCount);
     };
 
     if (loading) {
@@ -72,24 +81,38 @@ const QuizDetail: React.FC = () => {
         );
     }
 
-    const handleUpdateQuiz = async (updatedData: Partial<Quiz>) => {
-        if (!quiz) return;
+    if (score !== null) {
+        return (
+            <IonPage>
+                <IonHeader>
+                    <IonToolbar>
+                        <IonButtons slot="start">
+                            <IonBackButton defaultHref="/home" />
+                        </IonButtons>
+                        <IonTitle>Result</IonTitle>
+                    </IonToolbar>
+                </IonHeader>
+                <IonContent className="ion-padding ion-text-center">
+                    <div style={{ marginTop: '50px' }}>
+                        <IonIcon icon={trophy} color="warning" style={{ fontSize: '80px' }} />
+                        <h1>Quiz Completed!</h1>
+                        <h2 className="ion-margin-top">Your Score</h2>
+                        <h1 style={{ fontSize: '4rem', fontWeight: 'bold', color: 'var(--ion-color-primary)' }}>
+                            {score} / {quiz.questions.length}
+                        </h1>
+                        <p className="ion-margin-bottom">
+                            {score === quiz.questions.length ? 'Perfect Score! 🎉' : 'Good job! Keep learning.'}
+                        </p>
 
-        const updatedQuiz: Quiz = {
-            ...quiz,
-            ...updatedData,
-            // Ensure we keep the ID
-            id: quiz.id
-        };
-
-        try {
-            await quizService.update(updatedQuiz);
-            setQuiz(updatedQuiz);
-            setShowEditModal(false);
-        } catch (error) {
-            console.error("Failed to update quiz:", error);
-        }
-    };
+                        <IonButton routerLink="/home" expand="block" className="ion-margin-top">
+                            <IonIcon slot="start" icon={home} />
+                            Back to Home
+                        </IonButton>
+                    </div>
+                </IonContent>
+            </IonPage>
+        );
+    }
 
     return (
         <IonPage>
@@ -99,11 +122,6 @@ const QuizDetail: React.FC = () => {
                         <IonBackButton defaultHref="/home" />
                     </IonButtons>
                     <IonTitle>{quiz.title}</IonTitle>
-                    <IonButtons slot="end">
-                        <IonButton onClick={() => setShowEditModal(true)}>
-                            Edit
-                        </IonButton>
-                    </IonButtons>
                 </IonToolbar>
             </IonHeader>
             <IonContent>
@@ -127,56 +145,23 @@ const QuizDetail: React.FC = () => {
                         </>
                     )}
                 </div>
-
-                <IonModal isOpen={showEditModal} onDidDismiss={() => setShowEditModal(false)}>
-                    <IonHeader>
-                        <IonToolbar>
-                            <IonButtons slot="start">
-                                <IonButton onClick={() => setShowEditModal(false)}>Cancel</IonButton>
-                            </IonButtons>
-                            <IonTitle>Edit Quiz</IonTitle>
-                            <IonButtons slot="end">
-                                <IonButton strong={true} onClick={() => {
-                                    handleUpdateQuiz(pendingUpdate || {});
-                                }}>
-                                    Save
-                                </IonButton>
-                            </IonButtons>
-                        </IonToolbar>
-                    </IonHeader>
-                    <IonContent>
-                        {quiz && (
-                            <AddQuizForm
-                                initialData={quiz}
-                                onQuizChange={(data) => setPendingUpdate(data)}
-                            />
-                        )}
-                    </IonContent>
-                </IonModal>
             </IonContent>
 
             {quiz.questions.length > 0 && (
                 <IonFooter>
                     <IonToolbar>
-                        <IonButtons slot="start">
-                            <IonButton
-                                disabled={currentQuestionIndex === 0}
-                                onClick={() => setCurrentQuestionIndex(prev => Math.max(0, prev - 1))}
-                            >
-                                <IonIcon slot="start" icon={arrowBack} />
-                                Prev
-                            </IonButton>
-                        </IonButtons>
-                        <IonTitle size="small" className="ion-text-center">
-                            {currentQuestionIndex + 1} / {quiz.questions.length}
-                        </IonTitle>
                         <IonButtons slot="end">
                             <IonButton
                                 onClick={() => {
                                     if (currentQuestionIndex < quiz.questions.length - 1) {
                                         setCurrentQuestionIndex(prev => prev + 1);
+                                    } else {
+                                        handleFinish();
                                     }
                                 }}
+                                fill="solid"
+                                color="primary"
+                                style={{ margin: '0 16px', minWidth: '120px' }}
                             >
                                 {currentQuestionIndex === quiz.questions.length - 1 ? 'Finish' : 'Next'}
                                 <IonIcon slot="end" icon={currentQuestionIndex === quiz.questions.length - 1 ? checkmarkDone : arrowForward} />
