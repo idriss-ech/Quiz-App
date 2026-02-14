@@ -22,7 +22,7 @@ import {
 } from "@ionic/react";
 import { add, create, trash } from "ionicons/icons";
 import { useRef, useState } from "react";
-import { useHistory } from "react-router-dom";
+import { Link, useHistory } from "react-router-dom";
 import "./Home.css";
 import { Quiz } from "../models/quiz";
 import { quizService } from "../services/QuizService";
@@ -178,7 +178,11 @@ const Home: React.FC = () => {
           </IonRow>
         </IonGrid>
       </IonContent>
-
+      <div className="auth-footer">
+        <p>
+          Don't have an account? <Link to="/register" className="auth-link">Sign Up</Link>
+        </p>
+      </div>
       <IonFab vertical="bottom" horizontal="end" slot="fixed">
         <IonFabButton onClick={handleOpenAddModal}>
           <IonIcon icon={add}></IonIcon>
