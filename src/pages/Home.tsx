@@ -18,7 +18,7 @@ import {
   IonGrid,
   IonRow,
   IonCol,
-  useIonViewWillEnter
+  useIonViewWillEnter,
 } from "@ionic/react";
 import { add, create, trash } from "ionicons/icons";
 import { useRef, useState } from "react";
@@ -76,7 +76,7 @@ const Home: React.FC = () => {
     e.stopPropagation();
     try {
       await quizService.delete(id);
-      setQuizzes(quizzes.filter(q => q.id !== id));
+      setQuizzes(quizzes.filter((q) => q.id !== id));
       toast.showSuccess("Quiz deleted successfully");
     } catch (error) {
       console.error("Error deleting quiz:", error);
@@ -98,11 +98,13 @@ const Home: React.FC = () => {
         if (editingQuizId) {
           // Update existing
           const updatedQuiz: Quiz = {
-            ...quizData as Quiz,
-            id: editingQuizId
+            ...(quizData as Quiz),
+            id: editingQuizId,
           };
           await quizService.update(updatedQuiz);
-          setQuizzes(quizzes.map(q => q.id === editingQuizId ? updatedQuiz : q));
+          setQuizzes(
+            quizzes.map((q) => (q.id === editingQuizId ? updatedQuiz : q)),
+          );
           toast.showSuccess("Quiz updated successfully");
         } else {
           // Create new
@@ -110,6 +112,7 @@ const Home: React.FC = () => {
             id: Date.now().toString(),
             title: quizData.title,
             description: quizData.description,
+            questionCount: quizData.questions?.length || 0,
             questions: quizData.questions || [],
           };
           await quizService.add(newQuiz);
@@ -151,7 +154,7 @@ const Home: React.FC = () => {
                   <IonCardHeader>
                     <IonCardTitle>{quiz.title}</IonCardTitle>
                     <IonCardSubtitle>
-                      {quiz.questions.length} questions
+                      {quiz.questionCount} questions
                     </IonCardSubtitle>
                   </IonCardHeader>
                   <IonCardContent>{quiz.description}</IonCardContent>
@@ -180,7 +183,10 @@ const Home: React.FC = () => {
       </IonContent>
       <div className="auth-footer">
         <p>
-          Don't have an account? <Link to="/register" className="auth-link">Sign Up</Link>
+          Don't have an account?{" "}
+          <Link to="/register" className="auth-link">
+            Sign Up
+          </Link>
         </p>
       </div>
       <IonFab vertical="bottom" horizontal="end" slot="fixed">
@@ -197,13 +203,16 @@ const Home: React.FC = () => {
         <IonHeader>
           <IonToolbar>
             <IonButtons slot="start">
-              <IonButton onClick={() => modal.current?.dismiss(null, 'cancel')}>
+              <IonButton onClick={() => modal.current?.dismiss(null, "cancel")}>
                 Cancel
               </IonButton>
             </IonButtons>
-            <IonTitle>{editingQuizId ? 'Edit Quiz' : 'Add New Quiz'}</IonTitle>
+            <IonTitle>{editingQuizId ? "Edit Quiz" : "Add New Quiz"}</IonTitle>
             <IonButtons slot="end">
-              <IonButton strong={true} onClick={() => modal.current?.dismiss(newQuizData, 'confirm')}>
+              <IonButton
+                strong={true}
+                onClick={() => modal.current?.dismiss(newQuizData, "confirm")}
+              >
                 Confirm
               </IonButton>
             </IonButtons>

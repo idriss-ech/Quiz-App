@@ -24,6 +24,7 @@ class QuizService {
         id: d.id,
         title: data["title"],
         description: data["description"],
+        questionCount: data["questionCount"] ?? 0,
         questions: [],
       } as Quiz;
     });
@@ -56,6 +57,7 @@ class QuizService {
       id: docSnap.id,
       title: data["title"],
       description: data["description"],
+      questionCount: data["questionCount"] ?? 0,
       questions,
     };
   }
