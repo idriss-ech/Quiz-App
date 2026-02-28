@@ -1,2 +1,63 @@
 /* For information on how to create your own theme, please refer to:
 http://ionicframework.com/docs/theming/ */
+
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap");
+
+:root {
+  --ion-font-family:
+    "Montserrat", -apple-system, BlinkMacSystemFont, "Helvetica Neue",
+    sans-serif;
+  --app-font-size-base: 16px;
+  --app-font-size-sm: 0.875rem;
+  --app-font-size-md: 1rem;
+  --app-font-size-lg: 1.125rem;
+  --app-font-size-xl: 1.5rem;
+  --app-font-size-2xl: 2rem;
+}
+
+html {
+  font-size: var(--app-font-size-base);
+  font-family: var(--ion-font-family);
+}
+
+body,
+ion-app,
+ion-content,
+ion-item,
+ion-text,
+p,
+span,
+a,
+li {
+  font-family: var(--ion-font-family);
+  font-size: var(--app-font-size-md);
+}
+
+h1 {
+  font-size: var(--app-font-size-2xl);
+}
+
+h2 {
+  font-size: var(--app-font-size-xl);
+}
+
+h3 {
+  font-size: var(--app-font-size-lg);
+}
+
+ion-title {
+  font-size: var(--app-font-size-lg);
+  font-weight: 600;
+}
+
+ion-card-title {
+  font-size: var(--app-font-size-lg);
+}
+
+ion-card-subtitle {
+  font-size: var(--app-font-size-sm);
+}
+
+ion-button {
+  font-size: 0.95rem;
+}

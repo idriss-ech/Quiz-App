@@ -56,7 +56,19 @@
 
 /* Results Screen Styling */
 .result-content {
-  --padding-top: 2rem;
+  --padding-top: 0;
+}
+
+.result-content::part(scroll) {
+  min-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.result-wrapper {
+  width: 100%;
+  max-width: 600px;
 }
 
 .result-card {

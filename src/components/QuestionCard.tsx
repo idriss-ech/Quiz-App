@@ -30,10 +30,7 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
       style={{ borderRadius: "16px", boxShadow: "0 4px 16px rgba(0,0,0,0.1)" }}
     >
       <IonCardHeader>
-        <IonCardTitle
-          className="ion-text-center"
-          style={{ fontSize: "1.2rem", fontWeight: "600" }}
-        >
+        <IonCardTitle className="ion-text-center" style={{ fontWeight: "600" }}>
           {question.text}
         </IonCardTitle>
       </IonCardHeader>

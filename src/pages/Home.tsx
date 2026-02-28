@@ -42,6 +42,11 @@ const Home: React.FC = () => {
   const toast = useToast();
   const modal = useRef<HTMLIonModalElement>(null);
 
+  const getQuestionCount = (quiz: Quiz) =>
+    Array.isArray(quiz.questions) && quiz.questions.length > 0
+      ? quiz.questions.length
+      : (quiz.questionCount ?? 0);
+
   async function fetchQuizzes() {
     const data = await quizService.getAll();
     setQuizzes(data);
@@ -102,6 +107,8 @@ const Home: React.FC = () => {
           const updatedQuiz: Quiz = {
             ...(quizData as Quiz),
             id: editingQuizId,
+            questionCount: quizData.questions?.length ?? 0,
+            questions: quizData.questions || [],
           };
           await quizService.update(updatedQuiz);
           setQuizzes(
@@ -197,7 +204,7 @@ const Home: React.FC = () => {
                     <IonCardTitle>{quiz.title}</IonCardTitle>
                     <IonCardSubtitle>
                       <IonBadge color="primary">
-                        {quiz.questionCount} questions
+                        {getQuestionCount(quiz)} questions
                       </IonBadge>
                     </IonCardSubtitle>
                   </IonCardHeader>

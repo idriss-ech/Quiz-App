@@ -167,34 +167,36 @@ const QuizDetail: React.FC = () => {
             <IonTitle>Results</IonTitle>
           </IonToolbar>
         </IonHeader>
-        <IonContent className="ion-padding result-content" color="light">
-          <IonCard className="result-card">
-            <IonCardContent className="ion-text-center">
-              <div className={`icon-wrapper bg-${resultConfig.color}`}>
-                <IonIcon icon={resultConfig.icon} />
-              </div>
-              <h2 className="result-title">Quiz Completed!</h2>
-              <p className="result-subtitle">{resultConfig.message}</p>
+        <IonContent className="result-content" color="light">
+          <div className="result-wrapper ion-padding">
+            <IonCard className="result-card">
+              <IonCardContent className="ion-text-center">
+                <div className={`icon-wrapper bg-${resultConfig.color}`}>
+                  <IonIcon icon={resultConfig.icon} />
+                </div>
+                <h2 className="result-title">Quiz Completed!</h2>
+                <p className="result-subtitle">{resultConfig.message}</p>
 
-              <div className="score-display">
-                <span className={`score-text color-${resultConfig.color}`}>
-                  {score}
-                </span>
-                <span className="score-divider">/</span>
-                <span className="score-total">{totalQuestions}</span>
-              </div>
-            </IonCardContent>
-          </IonCard>
+                <div className="score-display">
+                  <span className={`score-text color-${resultConfig.color}`}>
+                    {score}
+                  </span>
+                  <span className="score-divider">/</span>
+                  <span className="score-total">{totalQuestions}</span>
+                </div>
+              </IonCardContent>
+            </IonCard>
 
-          <IonButton
-            routerLink="/home"
-            expand="block"
-            className="ion-margin-top action-button"
-            color="primary"
-          >
-            <IonIcon slot="start" icon={homeOutline} />
-            Back to Home
-          </IonButton>
+            <IonButton
+              routerLink="/home"
+              expand="block"
+              className="ion-margin-top action-button"
+              color="primary"
+            >
+              <IonIcon slot="start" icon={homeOutline} />
+              Back to Home
+            </IonButton>
+          </div>
         </IonContent>
       </IonPage>
     );
