@@ -52,6 +52,11 @@ const Register: React.FC = () => {
 
     if (isSubmitting) return;
 
+    if (!name.trim()) {
+      toast.showError("Full name is required.");
+      return;
+    }
+
     if (password !== confirmPassword) {
       toast.showError("Passwords do not match.");
       return;
@@ -59,7 +64,7 @@ const Register: React.FC = () => {
 
     try {
       setIsSubmitting(true);
-      await authService.createUser(email.trim(), password);
+      await authService.createUser(email.trim(), password, name);
       toast.showSuccess("Account created successfully");
       history.replace("/home");
     } catch (error) {

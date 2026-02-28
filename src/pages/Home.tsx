@@ -31,6 +31,7 @@ import { quizService } from "../services/QuizService";
 import { OverlayEventDetail } from "@ionic/react/dist/types/components/react-component-lib/interfaces";
 import AddQuizForm from "../components/AddQuizForm";
 import { useToast } from "../hooks/useToast";
+import { authService } from "../services/AuthService";
 
 const Home: React.FC = () => {
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
@@ -41,6 +42,7 @@ const Home: React.FC = () => {
   const history = useHistory();
   const toast = useToast();
   const modal = useRef<HTMLIonModalElement>(null);
+  const isConnected = !!authService.isConnected();
 
   const getQuestionCount = (quiz: Quiz) =>
     Array.isArray(quiz.questions) && quiz.questions.length > 0
@@ -232,13 +234,15 @@ const Home: React.FC = () => {
           </IonRow>
         </IonGrid>
       </IonContent>
-      <IonFooter>
-        <IonToolbar>
-          <IonTitle size="small" style={{ textAlign: "center" }}>
-            Don&apos;t have an account? <Link to="/register">Sign Up</Link>
-          </IonTitle>
-        </IonToolbar>
-      </IonFooter>
+      {!isConnected && (
+        <IonFooter>
+          <IonToolbar>
+            <IonTitle size="small" style={{ textAlign: "center" }}>
+              Don&apos;t have an account? <Link to="/register">Sign Up</Link>
+            </IonTitle>
+          </IonToolbar>
+        </IonFooter>
+      )}
       <IonFab vertical="bottom" horizontal="end" slot="fixed">
         <IonFabButton onClick={handleOpenAddModal}>
           <IonIcon icon={add}></IonIcon>
