@@ -15,18 +15,53 @@ import {
   IonCardSubtitle,
   IonCardContent,
 } from "@ionic/react";
+import { FirebaseError } from "firebase/app";
 import { useHistory } from "react-router-dom";
+import { useToast } from "../hooks/useToast";
+import { authService } from "../services/AuthService";
 import "./Login.css";
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const history = useHistory();
+  const toast = useToast();
 
-  function handleLogin(e: React.FormEvent) {
+  function mapAuthError(error: unknown) {
+    if (!(error instanceof FirebaseError)) {
+      return "Unable to sign in. Please try again.";
+    }
+
+    switch (error.code) {
+      case "auth/invalid-credential":
+      case "auth/wrong-password":
+      case "auth/user-not-found":
+        return "Invalid email or password.";
+      case "auth/invalid-email":
+        return "Please enter a valid email address.";
+      case "auth/too-many-requests":
+        return "Too many attempts. Please try again later.";
+      default:
+        return "Unable to sign in. Please try again.";
+    }
+  }
+
+  async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
-    console.log("Login attempt with:", { email, password });
-    history.push("/home");
+
+    if (isSubmitting) return;
+
+    try {
+      setIsSubmitting(true);
+      await authService.signIn(email.trim(), password);
+      toast.showSuccess("Signed in successfully");
+      history.replace("/home");
+    } catch (error) {
+      toast.showError(mapAuthError(error));
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -84,14 +119,16 @@ const Login: React.FC = () => {
                     size="large"
                     className="login-primary-btn ion-margin-bottom"
                     color="primary"
+                    disabled={isSubmitting}
                   >
-                    Sign In
+                    {isSubmitting ? "Signing in..." : "Sign In"}
                   </IonButton>
                   <IonButton
                     expand="block"
                     fill="clear"
                     onClick={() => history.push("/register")}
                     color="primary"
+                    disabled={isSubmitting}
                   >
                     Create New Account
                   </IonButton>
