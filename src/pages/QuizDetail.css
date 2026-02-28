@@ -1,0 +1,137 @@
+/* Progress Bar Polish */
+.quiz-progress {
+  height: 4px;
+}
+
+/* Question Container Layout */
+.content-wrapper {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.question-meta {
+  display: flex;
+  justify-content: center;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+}
+
+/* Footer & Buttons */
+.quiz-footer {
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.03);
+}
+
+.next-button {
+  --border-radius: 8px;
+  margin: 0 16px;
+  min-width: 100px;
+  font-weight: 600;
+}
+
+/* Loading State */
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--ion-color-medium);
+  margin-top: 30vh;
+}
+
+.loading-state p {
+  margin-top: 16px;
+  font-weight: 500;
+}
+
+/* Results Screen Styling */
+.result-content {
+  --padding-top: 2rem;
+}
+
+.result-card {
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  margin-bottom: 2rem;
+  padding: 1.5rem 0;
+}
+
+.icon-wrapper {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.5rem auto;
+}
+
+.icon-wrapper ion-icon {
+  font-size: 40px;
+  color: white;
+}
+
+.bg-success {
+  background-color: var(--ion-color-success);
+}
+.bg-warning {
+  background-color: var(--ion-color-warning);
+}
+.bg-primary {
+  background-color: var(--ion-color-primary);
+}
+
+.result-title {
+  font-weight: 700;
+  color: var(--ion-color-dark);
+  margin-bottom: 0.5rem;
+}
+
+.result-subtitle {
+  color: var(--ion-color-medium);
+  font-size: 1.1rem;
+  margin-bottom: 2rem;
+}
+
+.score-display {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 8px;
+}
+
+.score-text {
+  font-size: 4.5rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.color-success {
+  color: var(--ion-color-success);
+}
+.color-warning {
+  color: var(--ion-color-warning);
+}
+.color-primary {
+  color: var(--ion-color-primary);
+}
+
+.score-divider {
+  font-size: 2rem;
+  color: var(--ion-color-medium);
+  opacity: 0.5;
+}
+
+.score-total {
+  font-size: 2.5rem;
+  font-weight: 600;
+  color: var(--ion-color-medium);
+}
+
+.action-button {
+  --border-radius: 12px;
+  font-weight: 600;
+  height: 50px;
+}

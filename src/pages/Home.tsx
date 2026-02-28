@@ -40,22 +40,22 @@ const Home: React.FC = () => {
   const toast = useToast();
   const modal = useRef<HTMLIonModalElement>(null);
 
-  const fetchQuizzes = async () => {
+  async function fetchQuizzes() {
     const data = await quizService.getAll();
     setQuizzes(data);
-  };
+  }
 
   useIonViewWillEnter(() => {
     fetchQuizzes();
   });
 
-  const handleOpenAddModal = () => {
+  function handleOpenAddModal() {
     setEditingQuizId(null);
     setNewQuizData({});
     setShowModal(true);
-  };
+  }
 
-  const handleOpenEditModal = async (e: React.MouseEvent, quizId: string) => {
+  async function handleOpenEditModal(e: React.MouseEvent, quizId: string) {
     e.stopPropagation();
     try {
       const fullQuiz = await quizService.get(quizId);
@@ -70,9 +70,9 @@ const Home: React.FC = () => {
       console.error("Error fetching quiz details:", error);
       toast.showError("Failed to load quiz details");
     }
-  };
+  }
 
-  const handleDeleteQuiz = async (e: React.MouseEvent, id: string) => {
+  async function handleDeleteQuiz(e: React.MouseEvent, id: string) {
     e.stopPropagation();
     try {
       await quizService.delete(id);
@@ -82,9 +82,9 @@ const Home: React.FC = () => {
       console.error("Error deleting quiz:", error);
       toast.showError("Failed to delete quiz");
     }
-  };
+  }
 
-  const onWillDismiss = async (event: CustomEvent<OverlayEventDetail>) => {
+  async function onWillDismiss(event: CustomEvent<OverlayEventDetail>) {
     setShowModal(false);
     if (event.detail.role === "confirm") {
       const quizData = newQuizData; // Use state directly as it's updated by form
@@ -126,7 +126,7 @@ const Home: React.FC = () => {
     }
     setEditingQuizId(null);
     setNewQuizData({});
-  };
+  }
 
   return (
     <IonPage>
