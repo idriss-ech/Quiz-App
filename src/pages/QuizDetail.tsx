@@ -16,9 +16,7 @@ import {
   IonCardContent,
 } from "@ionic/react";
 import {
-  arrowForwardOutline,
   arrowBackOutline,
-  checkmarkDoneOutline,
   homeOutline,
   trophyOutline,
   starOutline,
@@ -276,14 +274,6 @@ const QuizDetail: React.FC = () => {
                 {currentQuestionIndex === quiz.questions.length - 1
                   ? "Finish"
                   : "Next"}
-                <IonIcon
-                  slot="end"
-                  icon={
-                    currentQuestionIndex === quiz.questions.length - 1
-                      ? checkmarkDoneOutline
-                      : arrowForwardOutline
-                  }
-                />
               </IonButton>
             </IonButtons>
           </IonToolbar>

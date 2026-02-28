@@ -7,6 +7,14 @@
 .content-wrapper {
   max-width: 600px;
   margin: 0 auto;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.question-container {
+  width: 100%;
 }
 
 .question-meta {

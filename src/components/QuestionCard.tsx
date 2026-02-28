@@ -8,9 +8,7 @@ import {
   IonItem,
   IonRadioGroup,
   IonRadio,
-  IonIcon,
 } from "@ionic/react";
-import { checkmarkCircle, closeCircle } from "ionicons/icons";
 import { Question } from "../models/question";
 
 interface QuestionCardProps {
@@ -49,43 +47,78 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
             }
           }}
         >
-          <IonList lines="none">
-            {question.choices.map((choice) => {
+          <IonList lines="none" style={{ padding: 0, margin: 0 }}>
+            {question.choices.map((choice, index) => {
               const isSelected = selectedChoiceId === choice.id;
               const isCorrect = choice.id === question.correctChoiceId;
 
               let color = isSelected ? "tertiary" : "light";
-              let icon = null;
 
               if (isAnswered) {
                 if (isCorrect) {
                   color = "success";
-                  icon = checkmarkCircle;
                 } else if (isSelected) {
                   color = "danger";
-                  icon = closeCircle;
                 }
               }
 
               return (
                 <IonItem
                   key={choice.id}
-                  className="ion-margin-bottom"
                   color={color}
-                  style={{ borderRadius: "12px", "--border-radius": "12px" }}
+                  button={!isAnswered}
+                  detail={false}
+                  onClick={() => {
+                    if (!isAnswered) {
+                      onChoiceSelect(question.id, choice.id);
+                    }
+                  }}
+                  style={{
+                    borderRadius: "12px",
+                    "--border-radius": "12px",
+                    "--padding-start": "6px",
+                    "--inner-padding-end": "14px",
+                    "--inner-padding-start": "14px",
+                    "--inner-padding-top": "12px",
+                    "--inner-padding-bottom": "12px",
+                    "--min-height": "56px",
+                    marginBottom:
+                      index === question.choices.length - 1 ? "0px" : "10px",
+                    justifyContent: "center",
+                    textAlign: "center",
+                  }}
                   mode="ios"
                 >
                   <IonRadio
                     slot="start"
                     value={choice.id}
                     disabled={isAnswered}
-                    labelPlacement="end"
-                    style={{ width: "100%", opacity: 1 }}
+                    style={{
+                      opacity: 1,
+                      marginInlineEnd: "10px",
+                    }}
                     mode="ios"
+                  />
+                  <span
+                    style={{
+                      display: "block",
+                      flex: 1,
+                      textAlign: "center",
+                      whiteSpace: "normal",
+                      overflowWrap: "anywhere",
+                      wordBreak: "break-word",
+                      lineHeight: "1.35",
+                    }}
                   >
                     {choice.text}
-                  </IonRadio>
-                  {icon && <IonIcon slot="end" icon={icon} />}
+                  </span>
+                  <span
+                    style={{
+                      display: "block",
+                      width: "22px",
+                      flexShrink: 0,
+                    }}
+                  />
                 </IonItem>
               );
             })}

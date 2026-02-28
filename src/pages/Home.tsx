@@ -1,5 +1,7 @@
 import {
+  IonBadge,
   IonContent,
+  IonFooter,
   IonHeader,
   IonPage,
   IonTitle,
@@ -18,12 +20,12 @@ import {
   IonGrid,
   IonRow,
   IonCol,
+  IonText,
   useIonViewWillEnter,
 } from "@ionic/react";
 import { add, create, trash } from "ionicons/icons";
 import { useRef, useState } from "react";
 import { Link, useHistory } from "react-router-dom";
-import "./Home.css";
 import { Quiz } from "../models/quiz";
 import { quizService } from "../services/QuizService";
 import { OverlayEventDetail } from "@ionic/react/dist/types/components/react-component-lib/interfaces";
@@ -133,16 +135,56 @@ const Home: React.FC = () => {
       <IonHeader>
         <IonToolbar>
           <IonTitle>Quiz App</IonTitle>
+          <IonButtons slot="end">
+            <IonButton onClick={handleOpenAddModal}>
+              <IonIcon slot="start" icon={add} />
+              New Quiz
+            </IonButton>
+          </IonButtons>
         </IonToolbar>
       </IonHeader>
-      <IonContent fullscreen>
-        <IonGrid>
+      <IonContent
+        fullscreen
+        style={{
+          "--padding-start": "8px",
+          "--padding-end": "8px",
+          "--padding-top": "8px",
+          "--padding-bottom": "8px",
+        }}
+      >
+        <IonCard style={{ margin: "8px" }}>
+          <IonCardHeader>
+            <IonCardSubtitle>Welcome back</IonCardSubtitle>
+            <IonCardTitle>Your quizzes</IonCardTitle>
+          </IonCardHeader>
+          <IonCardContent>
+            <IonText color="medium">
+              {quizzes.length > 0
+                ? `You currently have ${quizzes.length} quiz${quizzes.length > 1 ? "zes" : ""}.`
+                : "Create your first quiz to get started."}
+            </IonText>
+          </IonCardContent>
+        </IonCard>
+
+        <IonGrid className="ion-no-padding">
           <IonRow>
+            {quizzes.length === 0 && (
+              <IonCol size="12">
+                <IonCard style={{ margin: "8px" }}>
+                  <IonCardHeader>
+                    <IonCardTitle>No quizzes yet</IonCardTitle>
+                  </IonCardHeader>
+                  <IonCardContent>
+                    Tap <strong>New Quiz</strong> or the + button to create one.
+                  </IonCardContent>
+                </IonCard>
+              </IonCol>
+            )}
             {quizzes.map((quiz) => (
               <IonCol size="12" sizeMd="6" key={quiz.id}>
                 <IonCard
-                  color="primary"
                   button={true}
+                  style={{ borderRadius: "14px", margin: "8px" }}
                   onClick={() => {
                     // Fix for "Blocked aria-hidden" warning by removing focus before navigation
                     if (document.activeElement instanceof HTMLElement) {
@@ -154,7 +196,9 @@ const Home: React.FC = () => {
                   <IonCardHeader>
                     <IonCardTitle>{quiz.title}</IonCardTitle>
                     <IonCardSubtitle>
-                      {quiz.questionCount} questions
+                      <IonBadge color="primary">
+                        {quiz.questionCount} questions
+                      </IonBadge>
                     </IonCardSubtitle>
                   </IonCardHeader>
                   <IonCardContent>{quiz.description}</IonCardContent>
@@ -162,7 +206,7 @@ const Home: React.FC = () => {
                   <div className="ion-text-right ion-padding-end ion-padding-bottom">
                     <IonButton
                       fill="clear"
-                      color="light"
+                      color="primary"
                       onClick={(e) => handleOpenEditModal(e, quiz.id)}
                     >
                       <IonIcon slot="icon-only" icon={create} />
@@ -181,14 +225,13 @@ const Home: React.FC = () => {
           </IonRow>
         </IonGrid>
       </IonContent>
-      <div className="auth-footer">
-        <p>
-          Don't have an account?{" "}
-          <Link to="/register" className="auth-link">
-            Sign Up
-          </Link>
-        </p>
-      </div>
+      <IonFooter>
+        <IonToolbar>
+          <IonTitle size="small" style={{ textAlign: "center" }}>
+            Don&apos;t have an account? <Link to="/register">Sign Up</Link>
+          </IonTitle>
+        </IonToolbar>
+      </IonFooter>
       <IonFab vertical="bottom" horizontal="end" slot="fixed">
         <IonFabButton onClick={handleOpenAddModal}>
           <IonIcon icon={add}></IonIcon>
