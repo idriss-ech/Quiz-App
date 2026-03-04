@@ -23,7 +23,7 @@ import {
   IonText,
   useIonViewWillEnter,
 } from "@ionic/react";
-import { add, create, trash } from "ionicons/icons";
+import { add, create, play, trash } from "ionicons/icons";
 import { useRef, useState } from "react";
 import { Link, useHistory } from "react-router-dom";
 import { Quiz } from "../models/quiz";
@@ -32,6 +32,7 @@ import { OverlayEventDetail } from "@ionic/react/dist/types/components/react-com
 import AddQuizForm from "../components/AddQuizForm";
 import { useToast } from "../hooks/useToast";
 import { authService } from "../services/AuthService";
+import { gameService } from "../services/GameService";
 
 const Home: React.FC = () => {
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
@@ -90,6 +91,35 @@ const Home: React.FC = () => {
     } catch (error) {
       console.error("Error deleting quiz:", error);
       toast.showError("Failed to delete quiz");
+    }
+  }
+
+  async function handleStartLive(e: React.MouseEvent, quiz: Quiz) {
+    e.stopPropagation();
+
+    const connectedUser = authService.isConnected();
+    if (!connectedUser) {
+      toast.showError("Please sign in as admin to start a live game.");
+      return;
+    }
+
+    if (getQuestionCount(quiz) < 1) {
+      toast.showError("This quiz needs at least one question.");
+      return;
+    }
+
+    try {
+      const session = await gameService.createSession(
+        quiz.id,
+        connectedUser.uid,
+        connectedUser.displayName || connectedUser.email || "Admin",
+      );
+
+      history.push(`/host/${session.id}`);
+      toast.showSuccess(`Live game created. Code: ${session.code}`);
+    } catch (error) {
+      console.error("Error creating live game:", error);
+      toast.showError("Failed to start live game");
     }
   }
 
@@ -213,6 +243,13 @@ const Home: React.FC = () => {
                   <IonCardContent>{quiz.description}</IonCardContent>
 
                   <div className="ion-text-right ion-padding-end ion-padding-bottom">
+                    <IonButton
+                      fill="clear"
+                      color="tertiary"
+                      onClick={(e) => handleStartLive(e, quiz)}
+                    >
+                      <IonIcon slot="icon-only" icon={play} />
+                    </IonButton>
                     <IonButton
                       fill="clear"
                       color="primary"

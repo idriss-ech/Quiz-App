@@ -38,8 +38,8 @@ class AuthService {
     await firebaseSignOut(auth);
   }
 
-  isConnected(): User {
-    return auth.currentUser as User;
+  isConnected(): User | null {
+    return auth.currentUser;
   }
 }
 

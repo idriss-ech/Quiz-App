@@ -132,6 +132,15 @@ const Login: React.FC = () => {
                   >
                     Create New Account
                   </IonButton>
+                  <IonButton
+                    expand="block"
+                    fill="clear"
+                    onClick={() => history.push("/join")}
+                    color="medium"
+                    disabled={isSubmitting}
+                  >
+                    Join a live game
+                  </IonButton>
                 </div>
               </form>
             </IonCardContent>

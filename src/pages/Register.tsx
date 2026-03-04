@@ -163,6 +163,15 @@ const Register: React.FC = () => {
                   >
                     Already have an account? Sign In
                   </IonButton>
+                  <IonButton
+                    expand="block"
+                    fill="clear"
+                    onClick={() => history.push("/join")}
+                    color="medium"
+                    disabled={isSubmitting}
+                  >
+                    Join a live game
+                  </IonButton>
                 </div>
               </form>
             </IonCardContent>
