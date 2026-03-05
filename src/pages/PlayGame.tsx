@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
   IonButton,
+  IonBackButton,
+  IonButtons,
   IonCard,
   IonCardContent,
   IonCardHeader,
@@ -12,8 +14,7 @@ import {
   IonLabel,
   IonList,
   IonPage,
-  IonRadio,
-  IonRadioGroup,
+  IonProgressBar,
   IonSpinner,
   IonText,
   IonTitle,
@@ -24,6 +25,8 @@ import { useToast } from "../hooks/useToast";
 import { Quiz } from "../models/quiz";
 import { quizService } from "../services/QuizService";
 import { GamePlayer, GameSession, gameService } from "../services/GameService";
+import QuestionCard from "../components/QuestionCard";
+import "./QuizDetail.css";
 
 const PlayGame: React.FC = () => {
   const { sessionId } = useParams<{ sessionId: string }>();
@@ -38,6 +41,9 @@ const PlayGame: React.FC = () => {
   const [selectedChoiceId, setSelectedChoiceId] = useState<string | undefined>(
     undefined,
   );
+  const [submittedChoiceId, setSubmittedChoiceId] = useState<
+    string | undefined
+  >(undefined);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const playerId = useMemo(() => {
@@ -82,6 +88,7 @@ const PlayGame: React.FC = () => {
       if (!session || !playerId) return;
       if (session.status !== "in_progress") {
         setSelectedChoiceId(undefined);
+        setSubmittedChoiceId(undefined);
         return;
       }
 
@@ -92,6 +99,7 @@ const PlayGame: React.FC = () => {
       );
 
       setSelectedChoiceId(answer);
+      setSubmittedChoiceId(answer);
     }
 
     loadCurrentAnswer();
@@ -119,7 +127,7 @@ const PlayGame: React.FC = () => {
   const currentPlayer = players.find((player) => player.id === playerId);
 
   async function handleSubmitAnswer() {
-    if (!session || !selectedChoiceId) return;
+    if (!session || !selectedChoiceId || submittedChoiceId) return;
 
     try {
       setIsSubmitting(true);
@@ -129,6 +137,7 @@ const PlayGame: React.FC = () => {
         session.currentQuestionIndex,
         selectedChoiceId,
       );
+      setSubmittedChoiceId(selectedChoiceId);
       toast.showSuccess("Answer submitted");
     } catch (error) {
       console.error("Error submitting answer:", error);
@@ -177,8 +186,18 @@ const PlayGame: React.FC = () => {
     <IonPage>
       <IonHeader className="ion-no-border">
         <IonToolbar>
+          <IonButtons slot="start">
+            <IonBackButton defaultHref="/home" text="Exit" />
+          </IonButtons>
           <IonTitle>Live Quiz</IonTitle>
         </IonToolbar>
+        {session.status === "in_progress" && quiz?.questions.length ? (
+          <IonProgressBar
+            value={(session.currentQuestionIndex + 1) / quiz.questions.length}
+            color="primary"
+            className="quiz-progress"
+          />
+        ) : null}
       </IonHeader>
 
       <IonContent className="ion-padding" color="light">
@@ -218,28 +237,29 @@ const PlayGame: React.FC = () => {
                 Question {session.currentQuestionIndex + 1} /{" "}
                 {quiz?.questions.length || 0}
               </IonCardSubtitle>
-              <IonCardTitle>{currentQuestion.text}</IonCardTitle>
             </IonCardHeader>
             <IonCardContent>
-              <IonRadioGroup
-                value={selectedChoiceId}
-                onIonChange={(e) => setSelectedChoiceId(e.detail.value)}
-              >
-                <IonList>
-                  {currentQuestion.choices.map((choice) => (
-                    <IonItem key={choice.id}>
-                      <IonLabel>{choice.text}</IonLabel>
-                      <IonRadio slot="end" value={choice.id} />
-                    </IonItem>
-                  ))}
-                </IonList>
-              </IonRadioGroup>
+              <QuestionCard
+                key={`${currentQuestion.id}-${session.currentQuestionIndex}`}
+                question={currentQuestion}
+                selectedChoiceId={selectedChoiceId}
+                onChoiceSelect={(_, choiceId) => setSelectedChoiceId(choiceId)}
+                readOnly={!!submittedChoiceId}
+                showResultOnSelect={false}
+                lockOnSelect={false}
+                keepInteractiveStyle
+                selectedStyle="border"
+              />
 
               <IonButton
                 expand="block"
-                className="ion-margin-top"
+                className="next-button ion-margin-top"
+                fill="solid"
+                color="primary"
                 onClick={handleSubmitAnswer}
-                disabled={!selectedChoiceId || isSubmitting}
+                disabled={
+                  !selectedChoiceId || isSubmitting || !!submittedChoiceId
+                }
               >
                 {isSubmitting ? "Submitting..." : "Submit Answer"}
               </IonButton>

@@ -24,6 +24,7 @@ import {
 } from "ionicons/icons";
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router";
+import { useHistory } from "react-router-dom";
 import { Quiz } from "../models/quiz";
 import { quizService } from "../services/QuizService";
 import { authService } from "../services/AuthService";
@@ -32,6 +33,7 @@ import "./QuizDetail.css";
 
 const QuizDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const history = useHistory();
   const [quiz, setQuiz] = useState<Quiz | undefined>(undefined);
   const [loading, setLoading] = useState<boolean>(true);
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -59,6 +61,16 @@ const QuizDetail: React.FC = () => {
 
   const handleNext = () => {
     if (!quiz) return;
+
+    if (readOnlyMode) {
+      if (currentQuestionIndex < quiz.questions.length - 1) {
+        setCurrentQuestionIndex((prev) => prev + 1);
+      } else {
+        history.push("/home");
+      }
+      return;
+    }
+
     if (currentQuestionIndex < quiz.questions.length - 1) {
       setCurrentQuestionIndex((prev) => prev + 1);
     } else {
@@ -136,6 +148,7 @@ const QuizDetail: React.FC = () => {
   }
 
   const isOwner = !!connectedUser && quiz.ownerId === connectedUser.uid;
+  const readOnlyMode = isOwner;
 
   if (!isOwner) {
     return (
@@ -233,7 +246,7 @@ const QuizDetail: React.FC = () => {
 
   // Active Quiz View
   const currentQuestion = quiz.questions[currentQuestionIndex];
-  const hasAnsweredCurrent = !!answers[currentQuestion.id];
+  const hasAnsweredCurrent = readOnlyMode || !!answers[currentQuestion.id];
   const progressValue = (currentQuestionIndex + 1) / quiz.questions.length;
 
   return (
@@ -275,6 +288,8 @@ const QuizDetail: React.FC = () => {
                 question={currentQuestion}
                 selectedChoiceId={answers[currentQuestion.id]}
                 onChoiceSelect={handleChoiceSelect}
+                readOnly={readOnlyMode}
+                revealAnswers={readOnlyMode}
               />
             </div>
           )}
@@ -303,7 +318,9 @@ const QuizDetail: React.FC = () => {
                 className="next-button"
               >
                 {currentQuestionIndex === quiz.questions.length - 1
-                  ? "Finish"
+                  ? readOnlyMode
+                    ? "Done"
+                    : "Finish"
                   : "Next"}
               </IonButton>
             </IonButtons>

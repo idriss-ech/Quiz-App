@@ -18,8 +18,6 @@
 }
 
 .home-action-btn {
-  --border-radius: 12px;
-  height: 46px;
   font-weight: 600;
   margin: 0;
 }

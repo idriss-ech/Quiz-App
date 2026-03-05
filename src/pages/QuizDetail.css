@@ -33,9 +33,13 @@
 
 .next-button {
   --border-radius: 8px;
+  --padding-top: 12px;
+  --padding-bottom: 12px;
   margin: 0 16px;
   min-width: 100px;
+  height: 48px;
   font-weight: 600;
+  text-transform: none;
 }
 
 /* Loading State */
@@ -151,7 +155,5 @@
 }
 
 .action-button {
-  --border-radius: 12px;
   font-weight: 600;
-  height: 50px;
 }

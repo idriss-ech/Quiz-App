@@ -30,18 +30,9 @@
 }
 
 .login-primary-btn {
-  --border-radius: 12px;
   font-weight: 600;
-  height: 50px;
 }
 
 .login-actions {
   padding-top: 8px;
-}
-
-.login-actions ion-button[fill="clear"] {
-  font-size: 0.9rem;
-  height: 38px;
-  --padding-top: 0;
-  --padding-bottom: 0;
 }

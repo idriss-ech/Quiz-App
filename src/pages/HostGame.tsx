@@ -14,6 +14,7 @@ import {
   IonLabel,
   IonList,
   IonPage,
+  IonProgressBar,
   IonSpinner,
   IonText,
   IonTitle,
@@ -25,6 +26,7 @@ import { Quiz } from "../models/quiz";
 import { quizService } from "../services/QuizService";
 import { GamePlayer, GameSession, gameService } from "../services/GameService";
 import { authService } from "../services/AuthService";
+import "./QuizDetail.css";
 
 const HostGame: React.FC = () => {
   const { sessionId } = useParams<{ sessionId: string }>();
@@ -145,22 +147,26 @@ const HostGame: React.FC = () => {
       <IonHeader className="ion-no-border">
         <IonToolbar>
           <IonButtons slot="start">
-            <IonBackButton defaultHref="/home" />
+            <IonBackButton defaultHref="/home" text="Exit" />
           </IonButtons>
-          <IonTitle>Host Live Quiz</IonTitle>
+          <IonTitle>Live Quiz</IonTitle>
         </IonToolbar>
+        {session.status === "in_progress" && quiz?.questions.length ? (
+          <IonProgressBar
+            value={(session.currentQuestionIndex + 1) / quiz.questions.length}
+            color="primary"
+            className="quiz-progress"
+          />
+        ) : null}
       </IonHeader>
 
       <IonContent className="ion-padding" color="light">
         <IonCard>
           <IonCardHeader>
-            <IonCardSubtitle>Game Code</IonCardSubtitle>
-            <IonCardTitle>{session.code}</IonCardTitle>
+            <IonCardSubtitle>Code: {session.code}</IonCardSubtitle>
+            <IonCardTitle>{session.adminName || "Host"}</IonCardTitle>
           </IonCardHeader>
           <IonCardContent>
-            <IonText color="medium">
-              Share this code with players so they can join.
-            </IonText>
             <p>
               Status: <strong>{session.status.replace("_", " ")}</strong>
             </p>
@@ -200,16 +206,19 @@ const HostGame: React.FC = () => {
 
         {session.status === "in_progress" && (
           <IonCard>
-            <IonCardHeader>
+            <IonCardHeader className="ion-text-center">
               <IonCardSubtitle>
                 Question {session.currentQuestionIndex + 1} /{" "}
                 {quiz?.questions.length || 0}
               </IonCardSubtitle>
               <IonCardTitle>{currentQuestion?.text || "Question"}</IonCardTitle>
             </IonCardHeader>
-            <IonCardContent>
+            <IonCardContent className="ion-text-center">
               <IonButton
                 expand="block"
+                fill="solid"
+                color="primary"
+                className="next-button ion-margin-top"
                 onClick={handleNext}
                 disabled={!isAdmin || isActionRunning}
               >

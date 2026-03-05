@@ -15,14 +15,28 @@ interface QuestionCardProps {
   question: Question;
   selectedChoiceId?: string;
   onChoiceSelect: (questionId: string, choiceId: string) => void;
+  readOnly?: boolean;
+  revealAnswers?: boolean;
+  showResultOnSelect?: boolean;
+  lockOnSelect?: boolean;
+  keepInteractiveStyle?: boolean;
+  selectedStyle?: "background" | "border";
 }
 
 const QuestionCard: React.FC<QuestionCardProps> = ({
   question,
   selectedChoiceId,
   onChoiceSelect,
+  readOnly = false,
+  revealAnswers = false,
+  showResultOnSelect = true,
+  lockOnSelect = true,
+  keepInteractiveStyle = false,
+  selectedStyle = "background",
 }) => {
   const isAnswered = !!selectedChoiceId;
+  const isLocked = readOnly || (lockOnSelect && isAnswered);
+  const visuallyLocked = isLocked && !keepInteractiveStyle;
 
   return (
     <IonCard
@@ -39,7 +53,7 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
           value={selectedChoiceId}
           onIonChange={(e) => {
             // Prevent changing answer if already answered (though disabled inputs should prevent this)
-            if (!isAnswered) {
+            if (!isLocked) {
               onChoiceSelect(question.id, e.detail.value);
             }
           }}
@@ -49,24 +63,28 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
               const isSelected = selectedChoiceId === choice.id;
               const isCorrect = choice.id === question.correctChoiceId;
 
-              let color = isSelected ? "tertiary" : "light";
+              let color = "light";
 
-              if (isAnswered) {
+              if (revealAnswers) {
+                color = isCorrect ? "success" : "danger";
+              } else if (showResultOnSelect && isAnswered) {
                 if (isCorrect) {
                   color = "success";
                 } else if (isSelected) {
                   color = "danger";
                 }
+              } else if (isSelected && selectedStyle === "background") {
+                color = "tertiary";
               }
 
               return (
                 <IonItem
                   key={choice.id}
                   color={color}
-                  button={!isAnswered}
+                  button={!visuallyLocked}
                   detail={false}
                   onClick={() => {
-                    if (!isAnswered) {
+                    if (!isLocked) {
                       onChoiceSelect(question.id, choice.id);
                     }
                   }}
@@ -79,6 +97,13 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
                     "--inner-padding-top": "12px",
                     "--inner-padding-bottom": "12px",
                     "--min-height": "56px",
+                    border:
+                      isSelected &&
+                      selectedStyle === "border" &&
+                      !revealAnswers &&
+                      !showResultOnSelect
+                        ? "2px solid var(--ion-color-primary)"
+                        : "2px solid transparent",
                     marginBottom:
                       index === question.choices.length - 1 ? "0px" : "10px",
                     justifyContent: "center",
@@ -89,7 +114,7 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
                   <IonRadio
                     slot="start"
                     value={choice.id}
-                    disabled={isAnswered}
+                    disabled={visuallyLocked}
                     style={{
                       opacity: 1,
                       marginInlineEnd: "10px",

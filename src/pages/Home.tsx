@@ -41,10 +41,15 @@ const Home: React.FC = () => {
     null,
   );
   const [newQuizData, setNewQuizData] = useState<Partial<Quiz>>({});
+  const [startingLiveQuizId, setStartingLiveQuizId] = useState<string | null>(
+    null,
+  );
 
   const history = useHistory();
   const toast = useToast();
   const modal = useRef<HTMLIonModalElement>(null);
+  const latestQuizDataRef = useRef<Partial<Quiz>>({});
+  const startLiveLockRef = useRef(false);
   const connectedUser = authService.isConnected();
 
   const isQuizOwner = (quiz: Quiz) =>
@@ -78,7 +83,13 @@ const Home: React.FC = () => {
     setEditingQuizId(null);
     setEditingQuizOwnerId(null);
     setNewQuizData({});
+    latestQuizDataRef.current = {};
     setShowModal(true);
+  }
+
+  function handleQuizChange(data: Partial<Quiz>) {
+    latestQuizDataRef.current = data;
+    setNewQuizData(data);
   }
 
   async function handleOpenEditModal(e: React.MouseEvent, quizId: string) {
@@ -100,6 +111,7 @@ const Home: React.FC = () => {
         setEditingQuizId(quizId);
         setEditingQuizOwnerId(fullQuiz.ownerId || connectedUser.uid);
         setNewQuizData(fullQuiz);
+        latestQuizDataRef.current = fullQuiz;
         setShowModal(true);
       } else {
         toast.showError("Quiz not found");
@@ -136,33 +148,43 @@ const Home: React.FC = () => {
   async function handleStartLive(e: React.MouseEvent, quiz: Quiz) {
     e.stopPropagation();
 
-    if (!connectedUser) {
-      toast.showError("Please sign in first.");
+    if (startLiveLockRef.current || startingLiveQuizId) {
       return;
     }
 
-    if (!isQuizOwner(quiz)) {
-      toast.showError("You can only host your own quizzes.");
-      return;
-    }
-
-    if (getQuestionCount(quiz) < 1) {
-      toast.showError("This quiz needs at least one question.");
-      return;
-    }
+    startLiveLockRef.current = true;
 
     try {
+      if (!connectedUser) {
+        toast.showError("Please sign in first.");
+        return;
+      }
+
+      if (!isQuizOwner(quiz)) {
+        toast.showError("You can only host your own quizzes.");
+        return;
+      }
+
+      if (getQuestionCount(quiz) < 1) {
+        toast.showError("This quiz needs at least one question.");
+        return;
+      }
+
+      setStartingLiveQuizId(quiz.id);
       const session = await gameService.createSession(
         quiz.id,
         connectedUser.uid,
         connectedUser.displayName || connectedUser.email || "Admin",
       );
 
-      history.push(`/host/${session.id}`);
+      history.replace(`/host/${session.id}`);
       toast.showSuccess(`Live game created. Code: ${session.code}`);
     } catch (error) {
       console.error("Error creating live game:", error);
       toast.showError("Failed to start live game");
+    } finally {
+      setStartingLiveQuizId(null);
+      startLiveLockRef.current = false;
     }
   }
 
@@ -174,7 +196,7 @@ const Home: React.FC = () => {
         return;
       }
 
-      const quizData = newQuizData; // Use state directly as it's updated by form
+      const quizData = latestQuizDataRef.current;
 
       if (!quizData.title || !quizData.description) {
         toast.showError("Title and description are required");
@@ -218,6 +240,7 @@ const Home: React.FC = () => {
     setEditingQuizId(null);
     setEditingQuizOwnerId(null);
     setNewQuizData({});
+    latestQuizDataRef.current = {};
   }
 
   async function handleLogout() {
@@ -276,17 +299,7 @@ const Home: React.FC = () => {
             )}
             {quizzes.map((quiz) => (
               <IonCol size="12" sizeMd="6" key={quiz.id}>
-                <IonCard
-                  button={true}
-                  style={{ borderRadius: "14px", margin: "8px" }}
-                  onClick={() => {
-                    // Fix for "Blocked aria-hidden" warning by removing focus before navigation
-                    if (document.activeElement instanceof HTMLElement) {
-                      document.activeElement.blur();
-                    }
-                    history.push(`/quiz/${quiz.id}`);
-                  }}
-                >
+                <IonCard style={{ borderRadius: "14px", margin: "8px" }}>
                   <IonCardHeader>
                     <IonCardTitle>{quiz.title}</IonCardTitle>
                     <IonCardSubtitle>
@@ -302,7 +315,9 @@ const Home: React.FC = () => {
                       fill="clear"
                       color="tertiary"
                       onClick={(e) => handleStartLive(e, quiz)}
-                      disabled={!isQuizOwner(quiz)}
+                      disabled={
+                        !isQuizOwner(quiz) || startingLiveQuizId === quiz.id
+                      }
                     >
                       <IonIcon slot="icon-only" icon={play} />
                     </IonButton>
@@ -377,7 +392,7 @@ const Home: React.FC = () => {
         </IonHeader>
         <IonContent>
           <AddQuizForm
-            onQuizChange={(data) => setNewQuizData(data)}
+            onQuizChange={handleQuizChange}
             initialData={editingQuizId ? newQuizData : undefined}
           />
         </IonContent>

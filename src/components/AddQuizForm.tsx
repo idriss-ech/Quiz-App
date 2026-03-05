@@ -121,7 +121,13 @@ const AddQuizForm: React.FC<AddQuizFormProps> = ({
   const removeChoice = (questionId: string, choiceId: string) => {
     const updatedQuestions = questions.map((q) => {
       if (q.id === questionId) {
-        return { ...q, choices: q.choices.filter((c) => c.id !== choiceId) };
+        const updatedChoices = q.choices.filter((c) => c.id !== choiceId);
+        return {
+          ...q,
+          choices: updatedChoices,
+          correctChoiceId:
+            q.correctChoiceId === choiceId ? "" : q.correctChoiceId,
+        };
       }
       return q;
     });

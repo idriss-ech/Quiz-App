@@ -13,6 +13,10 @@ http://ionicframework.com/docs/theming/ */
   --app-font-size-lg: 1.125rem;
   --app-font-size-xl: 1.5rem;
   --app-font-size-2xl: 2rem;
+  --app-button-radius: 8px;
+  --app-button-height: 48px;
+  --app-button-padding-y: 12px;
+  --app-button-padding-x: 16px;
 }
 
 html {
@@ -60,4 +64,13 @@ ion-card-subtitle {
 
 ion-button {
   font-size: 0.95rem;
+  --border-radius: var(--app-button-radius);
+  --padding-top: var(--app-button-padding-y);
+  --padding-bottom: var(--app-button-padding-y);
+  --padding-start: var(--app-button-padding-x);
+  --padding-end: var(--app-button-padding-x);
+  min-height: var(--app-button-height);
+  height: var(--app-button-height);
+  font-weight: 600;
+  text-transform: none;
 }
