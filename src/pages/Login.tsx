@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   IonContent,
   IonPage,
@@ -27,6 +27,12 @@ const Login: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const history = useHistory();
   const toast = useToast();
+
+  useEffect(() => {
+    if (authService.isConnected()) {
+      history.replace("/home");
+    }
+  }, [history]);
 
   function mapAuthError(error: unknown) {
     if (!(error instanceof FirebaseError)) {
@@ -131,15 +137,6 @@ const Login: React.FC = () => {
                     disabled={isSubmitting}
                   >
                     Create New Account
-                  </IonButton>
-                  <IonButton
-                    expand="block"
-                    fill="clear"
-                    onClick={() => history.push("/join")}
-                    color="medium"
-                    disabled={isSubmitting}
-                  >
-                    Join a live game
                   </IonButton>
                 </div>
               </form>

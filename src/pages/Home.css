@@ -1,0 +1,25 @@
+.home-content {
+  --padding-start: 8px;
+  --padding-end: 8px;
+  --padding-top: 8px;
+  --padding-bottom: 8px;
+}
+
+.home-action-footer {
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.04);
+}
+
+.home-action-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+}
+
+.home-action-btn {
+  --border-radius: 12px;
+  height: 46px;
+  font-weight: 600;
+  margin: 0;
+}

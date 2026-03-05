@@ -14,8 +14,6 @@ import {
   IonButton,
   IonButtons,
   IonModal,
-  IonFab,
-  IonFabButton,
   IonIcon,
   IonGrid,
   IonRow,
@@ -23,9 +21,9 @@ import {
   IonText,
   useIonViewWillEnter,
 } from "@ionic/react";
-import { add, create, play, trash } from "ionicons/icons";
+import { add, create, logOutOutline, play, trash } from "ionicons/icons";
 import { useRef, useState } from "react";
-import { Link, useHistory } from "react-router-dom";
+import { useHistory } from "react-router-dom";
 import { Quiz } from "../models/quiz";
 import { quizService } from "../services/QuizService";
 import { OverlayEventDetail } from "@ionic/react/dist/types/components/react-component-lib/interfaces";
@@ -33,17 +31,24 @@ import AddQuizForm from "../components/AddQuizForm";
 import { useToast } from "../hooks/useToast";
 import { authService } from "../services/AuthService";
 import { gameService } from "../services/GameService";
+import "./Home.css";
 
 const Home: React.FC = () => {
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [editingQuizId, setEditingQuizId] = useState<string | null>(null);
+  const [editingQuizOwnerId, setEditingQuizOwnerId] = useState<string | null>(
+    null,
+  );
   const [newQuizData, setNewQuizData] = useState<Partial<Quiz>>({});
 
   const history = useHistory();
   const toast = useToast();
   const modal = useRef<HTMLIonModalElement>(null);
-  const isConnected = !!authService.isConnected();
+  const connectedUser = authService.isConnected();
+
+  const isQuizOwner = (quiz: Quiz) =>
+    !!connectedUser && quiz.ownerId === connectedUser.uid;
 
   const getQuestionCount = (quiz: Quiz) =>
     Array.isArray(quiz.questions) && quiz.questions.length > 0
@@ -51,7 +56,12 @@ const Home: React.FC = () => {
       : (quiz.questionCount ?? 0);
 
   async function fetchQuizzes() {
-    const data = await quizService.getAll();
+    if (!connectedUser) {
+      setQuizzes([]);
+      return;
+    }
+
+    const data = await quizService.getAll(connectedUser.uid);
     setQuizzes(data);
   }
 
@@ -60,17 +70,35 @@ const Home: React.FC = () => {
   });
 
   function handleOpenAddModal() {
+    if (!connectedUser) {
+      toast.showError("Please sign in first.");
+      return;
+    }
+
     setEditingQuizId(null);
+    setEditingQuizOwnerId(null);
     setNewQuizData({});
     setShowModal(true);
   }
 
   async function handleOpenEditModal(e: React.MouseEvent, quizId: string) {
     e.stopPropagation();
+
+    if (!connectedUser) {
+      toast.showError("Please sign in first.");
+      return;
+    }
+
     try {
       const fullQuiz = await quizService.get(quizId);
       if (fullQuiz) {
+        if (!isQuizOwner(fullQuiz)) {
+          toast.showError("You can only edit your own quizzes.");
+          return;
+        }
+
         setEditingQuizId(quizId);
+        setEditingQuizOwnerId(fullQuiz.ownerId || connectedUser.uid);
         setNewQuizData(fullQuiz);
         setShowModal(true);
       } else {
@@ -82,11 +110,22 @@ const Home: React.FC = () => {
     }
   }
 
-  async function handleDeleteQuiz(e: React.MouseEvent, id: string) {
+  async function handleDeleteQuiz(e: React.MouseEvent, quiz: Quiz) {
     e.stopPropagation();
+
+    if (!connectedUser) {
+      toast.showError("Please sign in first.");
+      return;
+    }
+
+    if (!isQuizOwner(quiz)) {
+      toast.showError("You can only delete your own quizzes.");
+      return;
+    }
+
     try {
-      await quizService.delete(id);
-      setQuizzes(quizzes.filter((q) => q.id !== id));
+      await quizService.delete(quiz.id, connectedUser.uid);
+      setQuizzes(quizzes.filter((q) => q.id !== quiz.id));
       toast.showSuccess("Quiz deleted successfully");
     } catch (error) {
       console.error("Error deleting quiz:", error);
@@ -97,9 +136,13 @@ const Home: React.FC = () => {
   async function handleStartLive(e: React.MouseEvent, quiz: Quiz) {
     e.stopPropagation();
 
-    const connectedUser = authService.isConnected();
     if (!connectedUser) {
-      toast.showError("Please sign in as admin to start a live game.");
+      toast.showError("Please sign in first.");
+      return;
+    }
+
+    if (!isQuizOwner(quiz)) {
+      toast.showError("You can only host your own quizzes.");
       return;
     }
 
@@ -126,6 +169,11 @@ const Home: React.FC = () => {
   async function onWillDismiss(event: CustomEvent<OverlayEventDetail>) {
     setShowModal(false);
     if (event.detail.role === "confirm") {
+      if (!connectedUser) {
+        toast.showError("Please sign in first.");
+        return;
+      }
+
       const quizData = newQuizData; // Use state directly as it's updated by form
 
       if (!quizData.title || !quizData.description) {
@@ -139,10 +187,11 @@ const Home: React.FC = () => {
           const updatedQuiz: Quiz = {
             ...(quizData as Quiz),
             id: editingQuizId,
+            ownerId: editingQuizOwnerId || connectedUser.uid,
             questionCount: quizData.questions?.length ?? 0,
             questions: quizData.questions || [],
           };
-          await quizService.update(updatedQuiz);
+          await quizService.update(updatedQuiz, connectedUser.uid);
           setQuizzes(
             quizzes.map((q) => (q.id === editingQuizId ? updatedQuiz : q)),
           );
@@ -153,6 +202,7 @@ const Home: React.FC = () => {
             id: Date.now().toString(),
             title: quizData.title,
             description: quizData.description,
+            ownerId: connectedUser.uid,
             questionCount: quizData.questions?.length || 0,
             questions: quizData.questions || [],
           };
@@ -166,7 +216,19 @@ const Home: React.FC = () => {
       }
     }
     setEditingQuizId(null);
+    setEditingQuizOwnerId(null);
     setNewQuizData({});
+  }
+
+  async function handleLogout() {
+    try {
+      await authService.signOut();
+      toast.showSuccess("Logged out successfully");
+      history.replace("/login");
+    } catch (error) {
+      console.error("Error during logout:", error);
+      toast.showError("Failed to log out");
+    }
   }
 
   return (
@@ -174,23 +236,16 @@ const Home: React.FC = () => {
       <IonHeader>
         <IonToolbar>
           <IonTitle>Quiz App</IonTitle>
-          <IonButtons slot="end">
-            <IonButton onClick={handleOpenAddModal}>
-              <IonIcon slot="start" icon={add} />
-              New Quiz
-            </IonButton>
-          </IonButtons>
+          {connectedUser && (
+            <IonButtons slot="end">
+              <IonButton fill="clear" onClick={handleLogout}>
+                <IonIcon slot="icon-only" icon={logOutOutline} />
+              </IonButton>
+            </IonButtons>
+          )}
         </IonToolbar>
       </IonHeader>
-      <IonContent
-        fullscreen
-        style={{
-          "--padding-start": "8px",
-          "--padding-end": "8px",
-          "--padding-top": "8px",
-          "--padding-bottom": "8px",
-        }}
-      >
+      <IonContent fullscreen className="home-content">
         <IonCard style={{ margin: "8px" }}>
           <IonCardHeader>
             <IonCardSubtitle>Welcome back</IonCardSubtitle>
@@ -247,6 +302,7 @@ const Home: React.FC = () => {
                       fill="clear"
                       color="tertiary"
                       onClick={(e) => handleStartLive(e, quiz)}
+                      disabled={!isQuizOwner(quiz)}
                     >
                       <IonIcon slot="icon-only" icon={play} />
                     </IonButton>
@@ -254,13 +310,15 @@ const Home: React.FC = () => {
                       fill="clear"
                       color="primary"
                       onClick={(e) => handleOpenEditModal(e, quiz.id)}
+                      disabled={!isQuizOwner(quiz)}
                     >
                       <IonIcon slot="icon-only" icon={create} />
                     </IonButton>
                     <IonButton
                       fill="clear"
                       color="danger"
-                      onClick={(e) => handleDeleteQuiz(e, quiz.id)}
+                      onClick={(e) => handleDeleteQuiz(e, quiz)}
+                      disabled={!isQuizOwner(quiz)}
                     >
                       <IonIcon slot="icon-only" icon={trash} />
                     </IonButton>
@@ -271,20 +329,28 @@ const Home: React.FC = () => {
           </IonRow>
         </IonGrid>
       </IonContent>
-      {!isConnected && (
-        <IonFooter>
-          <IonToolbar>
-            <IonTitle size="small" style={{ textAlign: "center" }}>
-              Don&apos;t have an account? <Link to="/register">Sign Up</Link>
-            </IonTitle>
-          </IonToolbar>
-        </IonFooter>
-      )}
-      <IonFab vertical="bottom" horizontal="end" slot="fixed">
-        <IonFabButton onClick={handleOpenAddModal}>
-          <IonIcon icon={add}></IonIcon>
-        </IonFabButton>
-      </IonFab>
+      <IonFooter className="home-action-footer">
+        <IonToolbar>
+          <div className="home-action-grid">
+            <IonButton
+              expand="block"
+              fill="outline"
+              className="home-action-btn"
+              onClick={() => history.push("/join")}
+            >
+              Join Game
+            </IonButton>
+            <IonButton
+              expand="block"
+              className="home-action-btn"
+              onClick={handleOpenAddModal}
+            >
+              <IonIcon slot="start" icon={add} />
+              New Quiz
+            </IonButton>
+          </div>
+        </IonToolbar>
+      </IonFooter>
 
       <IonModal
         ref={modal}

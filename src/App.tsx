@@ -9,6 +9,7 @@ import Register from "./pages/Register";
 import JoinGame from "./pages/JoinGame";
 import HostGame from "./pages/HostGame";
 import PlayGame from "./pages/PlayGame";
+import { authService } from "./services/AuthService";
 
 /* Core CSS required for Ionic components to work properly */
 import "@ionic/react/css/core.css";
@@ -42,6 +43,19 @@ import "./theme/variables.css";
 
 setupIonicReact();
 
+const ProtectedRoute: React.FC<{
+  path: string;
+  exact?: boolean;
+  children: React.ReactNode;
+}> = ({ children, ...routeProps }) => (
+  <Route
+    {...routeProps}
+    render={() =>
+      authService.isConnected() ? children : <Redirect to="/login" />
+    }
+  />
+);
+
 const App: React.FC = () => (
   <IonApp>
     <IonReactRouter>
@@ -55,21 +69,21 @@ const App: React.FC = () => (
         <Route exact path="/register">
           <Register />
         </Route>
-        <Route exact path="/join">
+        <ProtectedRoute exact path="/join">
           <JoinGame />
-        </Route>
-        <Route exact path="/home">
+        </ProtectedRoute>
+        <ProtectedRoute exact path="/home">
           <Home />
-        </Route>
-        <Route exact path="/quiz/:id">
+        </ProtectedRoute>
+        <ProtectedRoute exact path="/quiz/:id">
           <QuizDetail />
-        </Route>
-        <Route exact path="/host/:sessionId">
+        </ProtectedRoute>
+        <ProtectedRoute exact path="/host/:sessionId">
           <HostGame />
-        </Route>
-        <Route exact path="/play/:sessionId">
+        </ProtectedRoute>
+        <ProtectedRoute exact path="/play/:sessionId">
           <PlayGame />
-        </Route>
+        </ProtectedRoute>
         <Route exact path="/">
           <Redirect to="/splash" />
         </Route>

@@ -5,6 +5,8 @@ import {
   getDocs,
   doc,
   getDoc,
+  query,
+  where,
   writeBatch,
 } from "firebase/firestore";
 import { Question } from "../models/question";
@@ -15,8 +17,13 @@ class QuizService {
   // ==============================
   // GET ALL (NO QUESTIONS)
   // ==============================
-  async getAll(): Promise<Quiz[]> {
-    const querySnapshot = await getDocs(collection(db, this.collectionName));
+  async getAll(ownerId: string): Promise<Quiz[]> {
+    const querySnapshot = await getDocs(
+      query(
+        collection(db, this.collectionName),
+        where("ownerId", "==", ownerId),
+      ),
+    );
 
     return querySnapshot.docs.map((d) => {
       const data = d.data();
@@ -24,6 +31,7 @@ class QuizService {
         id: d.id,
         title: data["title"],
         description: data["description"],
+        ownerId: data["ownerId"],
         questionCount: data["questionCount"] ?? 0,
         questions: [],
       } as Quiz;
@@ -57,6 +65,7 @@ class QuizService {
       id: docSnap.id,
       title: data["title"],
       description: data["description"],
+      ownerId: data["ownerId"],
       questionCount: data["questionCount"] ?? 0,
       questions,
     };
@@ -74,6 +83,7 @@ class QuizService {
     batch.set(newQuizRef, {
       title: quiz.title,
       description: quiz.description,
+      ownerId: quiz.ownerId || null,
       questionCount: quiz.questions?.length ?? 0,
     });
 
@@ -101,14 +111,29 @@ class QuizService {
   // ==============================
   // UPDATE QUIZ + QUESTIONS
   // ==============================
-  async update(updatedQuiz: Quiz): Promise<void> {
+  async update(updatedQuiz: Quiz, actorUserId?: string): Promise<void> {
     const batch = writeBatch(db);
 
     const quizRef = doc(db, this.collectionName, updatedQuiz.id);
+    const quizSnap = await getDoc(quizRef);
+
+    if (!quizSnap.exists()) {
+      throw new Error("Quiz not found");
+    }
+
+    const existingData = quizSnap.data();
+    const existingOwnerId = existingData["ownerId"] as string | undefined;
+
+    if (!actorUserId || !existingOwnerId || existingOwnerId !== actorUserId) {
+      throw new Error("You are not allowed to update this quiz");
+    }
+
+    const ownerIdToPersist = existingOwnerId;
 
     batch.update(quizRef, {
       title: updatedQuiz.title,
       description: updatedQuiz.description,
+      ownerId: ownerIdToPersist || null,
       questionCount: updatedQuiz.questions.length,
     });
 
@@ -161,10 +186,22 @@ class QuizService {
   // ==============================
   // DELETE QUIZ + QUESTIONS
   // ==============================
-  async delete(id: string): Promise<void> {
+  async delete(id: string, actorUserId?: string): Promise<void> {
     const batch = writeBatch(db);
 
     const quizRef = doc(db, this.collectionName, id);
+    const quizSnap = await getDoc(quizRef);
+
+    if (!quizSnap.exists()) {
+      throw new Error("Quiz not found");
+    }
+
+    const existingData = quizSnap.data();
+    const existingOwnerId = existingData["ownerId"] as string | undefined;
+
+    if (!actorUserId || !existingOwnerId || existingOwnerId !== actorUserId) {
+      throw new Error("You are not allowed to delete this quiz");
+    }
 
     const questionsRef = collection(db, this.collectionName, id, "Question");
 

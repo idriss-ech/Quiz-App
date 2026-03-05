@@ -17,12 +17,12 @@ import {
 } from "@ionic/react";
 import { useHistory } from "react-router-dom";
 import { useToast } from "../hooks/useToast";
+import { authService } from "../services/AuthService";
 import { gameService } from "../services/GameService";
 import "./Login.css";
 
 const JoinGame: React.FC = () => {
   const [code, setCode] = useState("");
-  const [name, setName] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const history = useHistory();
   const toast = useToast();
@@ -31,8 +31,13 @@ const JoinGame: React.FC = () => {
     e.preventDefault();
 
     if (isSubmitting) return;
-    if (!name.trim()) {
-      toast.showError("Player name is required.");
+
+    const connectedUser = authService.isConnected();
+    const registeredPlayerName = connectedUser?.displayName?.trim();
+
+    if (!connectedUser || !registeredPlayerName) {
+      toast.showError("Please sign in with your registered account first.");
+      history.replace("/login");
       return;
     }
 
@@ -44,7 +49,10 @@ const JoinGame: React.FC = () => {
         return;
       }
 
-      const player = await gameService.addPlayer(session.id, name);
+      const player = await gameService.addPlayer(
+        session.id,
+        registeredPlayerName,
+      );
       toast.showSuccess("Joined game successfully");
       history.replace(`/play/${session.id}?playerId=${player.id}`);
     } catch (error) {
@@ -79,16 +87,6 @@ const JoinGame: React.FC = () => {
                 <IonList className="login-form-list">
                   <IonItem lines="full" className="login-form-item">
                     <IonInput
-                      label="Your Name"
-                      labelPlacement="floating"
-                      placeholder="Enter your name"
-                      value={name}
-                      onIonInput={(e) => setName(e.detail.value || "")}
-                      required
-                    />
-                  </IonItem>
-                  <IonItem lines="full" className="login-form-item">
-                    <IonInput
                       label="Game Code"
                       labelPlacement="floating"
                       placeholder="e.g. A8F4K2"
@@ -111,14 +109,6 @@ const JoinGame: React.FC = () => {
                     disabled={isSubmitting}
                   >
                     {isSubmitting ? "Joining..." : "Join Game"}
-                  </IonButton>
-                  <IonButton
-                    expand="block"
-                    fill="clear"
-                    onClick={() => history.push("/login")}
-                    disabled={isSubmitting}
-                  >
-                    Back to Login
                   </IonButton>
                 </div>
               </form>

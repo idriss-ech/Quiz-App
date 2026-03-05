@@ -1,13 +1,14 @@
 import React, { useEffect } from "react";
 import { IonContent, IonPage } from "@ionic/react";
 import { useHistory } from "react-router-dom";
+import { authService } from "../services/AuthService";
 
 const SplashScreen: React.FC = () => {
   const history = useHistory();
 
   useEffect(() => {
     const timeout = setTimeout(() => {
-      history.replace("/login");
+      history.replace(authService.isConnected() ? "/home" : "/login");
     }, 2000);
 
     return () => clearTimeout(timeout);

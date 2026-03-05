@@ -26,6 +26,7 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "react-router";
 import { Quiz } from "../models/quiz";
 import { quizService } from "../services/QuizService";
+import { authService } from "../services/AuthService";
 import QuestionCard from "../components/QuestionCard";
 import "./QuizDetail.css";
 
@@ -36,6 +37,7 @@ const QuizDetail: React.FC = () => {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [score, setScore] = useState<number | null>(null);
+  const connectedUser = authService.isConnected();
 
   useEffect(() => {
     const fetchQuiz = async () => {
@@ -124,6 +126,33 @@ const QuizDetail: React.FC = () => {
             <IonIcon icon={bookOutline} className="empty-state-icon" />
             <h3>Quiz not found</h3>
             <p>The quiz you are looking for might have been deleted.</p>
+            <IonButton routerLink="/home" fill="clear">
+              Return Home
+            </IonButton>
+          </div>
+        </IonContent>
+      </IonPage>
+    );
+  }
+
+  const isOwner = !!connectedUser && quiz.ownerId === connectedUser.uid;
+
+  if (!isOwner) {
+    return (
+      <IonPage>
+        <IonHeader className="ion-no-border">
+          <IonToolbar>
+            <IonButtons slot="start">
+              <IonBackButton defaultHref="/home" />
+            </IonButtons>
+            <IonTitle>Access Denied</IonTitle>
+          </IonToolbar>
+        </IonHeader>
+        <IonContent className="ion-padding">
+          <div className="empty-state">
+            <IonIcon icon={bookOutline} className="empty-state-icon" />
+            <h3>Unauthorized</h3>
+            <p>You can only open your own quizzes.</p>
             <IonButton routerLink="/home" fill="clear">
               Return Home
             </IonButton>
